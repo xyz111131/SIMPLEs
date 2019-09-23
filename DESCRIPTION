@@ -1,0 +1,19 @@
+Package: SIMPLE
+Type: Package
+Title: What the Package Does (Title Case)
+Version: 0.1.0
+Author: Z. Hu
+Maintainer: Zhirui Hu <yourself@somewhere.net>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: What license is it under?
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    MASS (>= 7.3-51.4),
+    glmnet (>= 2.0-16),
+    matrixStats (>= 0.54.0),
+    mixtools (>= 1.1.0),
+    Rsolnp (>= 1.16),
+    msm (>= 1.6.7)
+RoxygenNote: 6.1.1
