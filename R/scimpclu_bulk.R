@@ -98,7 +98,7 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1,verbose=F)
 }
 
 #' @export
-scimpclu_bulk <- function(dat, K0, bulk, M0=1, celltype = NULL, clus = NULL, K = 20, iter=10, est_z = 1,  impt_it = 5, max_lambda=F, est_lam = 1,penl =1 ,sigma0 = 100,  pi_alpha = 1, beta = NULL, lambda =NULL, sigma=NULL, mu=NULL, p_min = 0.8, min_gene = 300, cutoff=0.1, verbose=F, num_mc = 3, fix_num = F, clus_opt = 2)  # iter: EM step for all genes
+scimpclu_bulk <- function(dat, K0, bulk, M0=1, celltype = NULL, clus = NULL, K = 20, iter=10, est_z = 1,  impt_it = 5, max_lambda=F, est_lam = 2,penl =1 ,sigma0 = 100,  pi_alpha = 1, beta = NULL, lambda =NULL, sigma=NULL, mu=NULL, p_min = 0.8, min_gene = 300, cutoff=0.1, verbose=F, num_mc = 3)  # M0 is only for inital impute for hq genes, iter: EM step for all genes
 {
   #EM algorithm
   #initiation
@@ -120,13 +120,10 @@ scimpclu_bulk <- function(dat, K0, bulk, M0=1, celltype = NULL, clus = NULL, K =
 
   # inital impution only for low dropout genes
   n1 = rowMeans(dat > cutoff)
-  if(fix_num)
-  {
-    hq_ind = order(n1, decreasing = T)[1:min_gene]
-  }else{
-    hq_ind = which(n1 >= p_min)
-    if(length(hq_ind) < min_gene) hq_ind = order(n1, decreasing = T)[1:min_gene] # need to change back
-  }
+  hq_ind = which(n1 >= p_min)
+
+  if(length(hq_ind) < min_gene) hq_ind = order(n1, decreasing = T)[1:min_gene]
+
   # regression for hq genes and estimate dropout rate for all genes
   MB = max(celltype)
   pg = matrix(0, G, MB)
@@ -152,12 +149,8 @@ scimpclu_bulk <- function(dat, K0, bulk, M0=1, celltype = NULL, clus = NULL, K =
 
     Y2_scale = t(scale(t(res)))
     s = svd(Y2_scale)
-    if(clus_opt==1)
-    {
-      km0 <- kmeans(t(Y2_scale)%*% s$u[,1:K], M0, iter.max = 80, nstart = 300)
-    }else{
-      km0 <- kmeans(s$v[,1:K], M0, iter.max = 80, nstart = 300)
-    }
+    #km0 <- kmeans(t(Y2_scale)%*% s$u[,1:K], M0, iter.max = 80, nstart = 300)
+    km0 <- kmeans(s$v[,1:K], M0, iter.max = 80, nstart = 300)
     clus = km0$cluster
 
     if(verbose) {

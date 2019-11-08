@@ -9,7 +9,7 @@ library(ggplot2)
 library(reshape2)
 library(matrixStats)
 
-source("SIMPLE/Simulation/utils.R")
+source("SIMPLE/utils.R")
 
 args = commandArgs(trailingOnly=TRUE)
 
@@ -21,35 +21,29 @@ auc <- matrix(0, run, 6)
 mse_cor <- matrix(0, run, 12) # for true_correlation =0  & !=0
 
 
-colnames(cluster_result) <- paste(rep(c('Y2', 'Y', 'scimpclu_clus','scimpclu_impt', 'scimpclu_bulk_clus','scimpclu_bulk_impt','scimpute', 'magic'), each = 2), c(1,2), sep="-")
-colnames(mse) =c('Y2','scimpclu_mean','scimpclu_impt', 'scimpclu_bulk_mean','scimpclu_bulk_impt','scimpute', 'magic')
-colnames(auc) = c('Y2', 'Y', 'scimpclu_impt', 'scimpclu_bulk_impt','scimpute', 'magic')
-colnames(mse_cor) = paste(rep(c('Y2', 'Y', 'scimpclu', 'scimpclu_bulk','scimpute', 'magic'), each=2), c(1,2), sep="-")
+colnames(cluster_result) <- paste(rep(c('Y2', 'Y', 'SIMPLE_clus','SIMPLE_impt', 'SIMPLE_bulk_clus','SIMPLE_bulk_impt','scimpute', 'magic'), each = 2), c(1,2), sep="-")
+colnames(mse) =c('Y2','SIMPLE_mean','SIMPLE_impt', 'SIMPLE_bulk_mean','SIMPLE_bulk_impt','scimpute', 'magic')
+colnames(auc) = c('Y2', 'Y', 'SIMPLE_impt', 'SIMPLE_bulk_impt','scimpute', 'magic')
+colnames(mse_cor) = paste(rep(c('Y2', 'Y', 'SIMPLE', 'SIMPLE_bulk','scimpute', 'magic'), each=2), c(1,2), sep="-")
 
 
 K0 = as.numeric(args[1])
 n = 300
 M0 = 3
-pm = as.numeric(args[2]) #0.5 #0.4
+pm = as.numeric(args[2]) #0.5, 0.4
 for( r in 1:run)
 {
   set.seed(r)
+  print(paste("run:", r))
+
+  #### simualtion 1  #### 
   #simu_data = simulation_bulk(n, S0 = 20, K = 0, MC=M0, block_size = 50, indepG = 1000 , verbose=T)
 
-  ##simu_data = simulation_bulk(n, S0 = 20, K = 5, MC=M0, block_size = 50, indepG = 1000 - 50 - 35*4, verbose=T) #
-  print(paste("run:", r))
+  
+  #### simualtion 2  #### 
   simu_data = simulation_bulk(n, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0)
-
   #simu_data = simulation_bulk(n, S0 = 20, K = 3, MC=M0, block_size = 100, indepG = 1000 - 190, verbose=F, overlap=55)
 
-  ###simu_data = simulation_bulk(n, S0 = 20, K = 7, MC=M0, block_size = 100, indepG = 1000 - 100 - 85*6, verbose=T, overlap = 15) # 50 is better
-
-  # # SNR
-  # signals = svd(simu_data$Mu - rowMeans(simu_data$Mu))$d
-  # noises = eigen(simu_data$B%*%t(simu_data$B) + diag(simu_data$Sigma^2),symmetric=T)$values
-  # print(round(noises[1:4],2))
-  # print(mean(signals^2)/sum(noises))
-  #print(mean(signals^2)/max(noises))
 
   Y2 = simu_data$Y2
   Y = simu_data$Y
@@ -59,12 +53,12 @@ for( r in 1:run)
   cluster_result[r,3:4] =getCluster(Y, celltype_true, Ks = 20, M0 = M0)[[1]]
   mse[r,1] <- mean(Y[Y2==0]^2)
 
-  #### scimpclu ####
+  #### SIMPLE ####
   registerDoParallel(cores = 6)
   result <- scimpclu(Y2, K0, M0, clus = NULL, K = 20, iter= 10, est_z = 1, impt_it = 1, max_lambda=T, est_lam = 1, penl =1, sigma0 = 100, p_min = pm, cutoff=0.01,verbose=T, min_gene = 200) #0.4
   resultY = result$Y
 
-  #cluster_result[r,5:6] = getCluster(result$Yimp0, celltype_true, Ks = 20, M0 = M0)[[1]]
+
   cluster_result[r,5:6] = mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true)
   mse[r,2] = mean((result$Yimp0[Y2==0] - Y[Y2==0])^2) # should use this
 
@@ -87,43 +81,37 @@ for( r in 1:run)
 
 
   #### method 3 ####
-  #sci_result <- scimpute("", infile = "csv", outfile = "csv", type = "count",
-  #                       "../scimpute/", labeled = FALSE, drop_thre = pm, Kcluster = M0,
-  #                       labels = NULL, genelen = NULL, ncores = 6, count_lnorm = data.frame(Y2+log10(1.001)))
+  sci_result <- scimpute("", infile = "csv", outfile = "csv", type = "count",
+                        "../scimpute/", labeled = FALSE, drop_thre = pm, Kcluster = M0,
+                        labels = NULL, genelen = NULL, ncores = 6, count_lnorm = data.frame(Y2+log10(1.001)))
 
 
-  #cluster_result[r,13:14] = getCluster(sci_result[[1]], celltype_true, Ks = 20, M0 = M0)[[1]]
-  #mse[r,6] = mean((sci_result[[1]][Y2==0] - Y[Y2==0])^2)
+  cluster_result[r,13:14] = getCluster(sci_result[[1]], celltype_true, Ks = 20, M0 = M0)[[1]]
+  mse[r,6] = mean((sci_result[[1]][Y2==0] - Y[Y2==0])^2)
 
   #### method 4 ####
-  #MAGIC <- magic(t(Y2), genes="all_genes", t="auto")
-  #cluster_result[r,15:16] = getCluster(t(MAGIC$result), celltype_true, Ks = 20, M0 = M0)[[1]]
-  #mse[r,7] = mean((t(MAGIC$result)[Y2==0] - Y[Y2==0])^2)
+  MAGIC <- magic(t(Y2), genes="all_genes", t="auto")
+  cluster_result[r,15:16] = getCluster(t(MAGIC$result), celltype_true, Ks = 20, M0 = M0)[[1]]
+  mse[r,7] = mean((t(MAGIC$result)[Y2==0] - Y[Y2==0])^2)
 
 
   # auc
   for(m in 1:M0)
   {
     res0 <- apply(Y2, 1, myttest, m = m, celltype=celltype_true)
-    #   # if(sd(x) <1e-6) {
-    #   #   1
-    #   # }else{
-    #   #   t.test(x~celltype_true==m)$p.value
-    #   # }
-    #   # }) #, alternative="l"
     res <- apply(Y, 1, myttest, m = m, celltype=celltype_true)
     res2 <- apply(result1$impt, 1, myttest, m = m, celltype=celltype_true)
     res3 <- apply(result2$impt, 1, myttest, m = m, celltype=celltype_true)
-    #res4 <- apply(sci_result[[1]], 1, myttest, m = m, celltype=celltype_true)
-    #res5 <- apply(MAGIC$result, 2, myttest, m = m, celltype=celltype_true)
+    res4 <- apply(sci_result[[1]], 1, myttest, m = m, celltype=celltype_true)
+    res5 <- apply(MAGIC$result, 2, myttest, m = m, celltype=celltype_true)
 
 
     auc[r, 1] = auc[r, 1] + caTools::colAUC(res0, label_true[,m])
     auc[r, 2] = auc[r, 2] + caTools::colAUC(res, label_true[,m])
     auc[r, 3] = auc[r, 3] + caTools::colAUC(res2, label_true[,m])
     auc[r, 4] = auc[r, 4] + caTools::colAUC(res3, label_true[,m])
-    #auc[r, 5] = auc[r, 5] + caTools::colAUC(res4, label_true[,m])
-    #auc[r, 6] = auc[r, 6] + caTools::colAUC(res5, label_true[,m])
+    auc[r, 5] = auc[r, 5] + caTools::colAUC(res4, label_true[,m])
+    auc[r, 6] = auc[r, 6] + caTools::colAUC(res5, label_true[,m])
 
   }
 
@@ -135,18 +123,14 @@ for( r in 1:run)
   for(m in 1:M0)
   {
     mse_cor[r, 1:2] = mse_cor[r, 1:2] + mycor(Y2, m, celltype_true, cors)
-    # #hist(org_cors[cors==0], breaks = 50)
-    # #hist(org_cors[BB!=0] - cors[BB!=0])
-    #
     mse_cor[r, 3:4] = mse_cor[r, 3:4] + mycor(Y, m, celltype_true, cors)
     mse_cor[r, 5:6] = mse_cor[r, 5:6] + mycor(resultY, m, celltype_true, cors)
     mse_cor[r, 7:8] = mse_cor[r, 7:8] + mycor(resultYB, m, celltype_true, cors)
-    #mse_cor[r, 9:10] = mse_cor[r, 9:10] + mycor(sci_result[[1]], m, celltype_true, cors)
-    #mse_cor[r, 11:12] = mse_cor[r, 11:12] + mycor(t(MAGIC$result), m, celltype_true, cors)
+    mse_cor[r, 9:10] = mse_cor[r, 9:10] + mycor(sci_result[[1]], m, celltype_true, cors)
+    mse_cor[r, 11:12] = mse_cor[r, 11:12] + mycor(t(MAGIC$result), m, celltype_true, cors)
 
   }
 
- # .rs.restartR()
 
 }
 

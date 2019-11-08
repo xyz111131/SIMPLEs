@@ -73,7 +73,7 @@ init_impute <- function(Y2,M0, clus,p_min =0.6, cutoff = 0.5,verbose=F)
 }
 
 #' @export
-scimpclu <- function(dat, K0, M0 = 1, iter=10, est_lam = 1, impt_it = 5, penl =1 ,sigma0 = 100,  pi_alpha = 1, beta = NULL, verbose=F, max_lambda=F, lambda =NULL, sigma=NULL, mu=NULL, est_z = 1, clus = NULL,p_min = 0.8, cutoff=0.5, K = 10, min_gene = 300, num_mc = 3, fix_num = F, clus_opt = 2, lower = -Inf, upper = Inf)
+scimpclu <- function(dat, K0, M0 = 1, iter=10, est_lam = 2, impt_it = 5, penl =1 ,sigma0 = 100,  pi_alpha = 1, beta = NULL, verbose=F, max_lambda=F, lambda =NULL, sigma=NULL, mu=NULL, est_z = 1, clus = NULL,p_min = 0.8, cutoff=0.5, K = 10, min_gene = 300, num_mc = 3, lower = -Inf, upper = Inf)  # M0 is only for inital impute for hq genes, celltype = NULL,
 {
   #EM algorithm
   #initiation
@@ -109,29 +109,17 @@ scimpclu <- function(dat, K0, M0 = 1, iter=10, est_lam = 1, impt_it = 5, penl =1
 
   # inital impution only for low dropout genes
   n1 = rowMeans(dat > cutoff)
-  if(fix_num)
-  {
-      hq_ind = order(n1, decreasing = T)[1:min_gene]
-  }
-  else{
-    hq_ind = which(n1 >= p_min ) #
-    if(length(hq_ind) < min_gene) hq_ind = order(n1, decreasing = T)[1:min_gene] # fix number of hq genes for simulation, need to change back
-  }
-  
+  hq_ind = which(n1 >= p_min ) #
+  if(length(hq_ind) < min_gene) hq_ind = order(n1, decreasing = T)[1:min_gene]
   print(paste("inital impution for ", length(hq_ind), "high quality genes" )) #low dropout
-  
+
   # init clustering
   if(is.null(clus))
   {
     Y2_scale = t(scale(t(dat[hq_ind, ])))
     s = svd(Y2_scale)
-    if(clus_opt == 1)
-    {
-      km0 <- kmeans(t(Y2_scale)%*% s$u[,1:K], M0, iter.max = 80, nstart = 300) # for high dropout rate
-    }
-    else{
-      km0 <- kmeans(s$v[,1:K], M0, iter.max = 80, nstart = 300)
-    }
+    km0 <- kmeans(t(Y2_scale)%*% s$u[,1:K], M0, iter.max = 80, nstart = 300) #s$v[,1:K]
+    #km0 <- kmeans(s$v[,1:K], M0, iter.max = 80, nstart = 300)
     clus = km0$cluster
     if(verbose & !is.null(celltype_true)) {
       print(mclust::adjustedRandIndex(clus, celltype_true))

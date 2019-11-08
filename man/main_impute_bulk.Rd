@@ -6,12 +6,12 @@ Impute zero entries and clustering for scRNASeq data integrating bulk RNASeq
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of what the function does. ~~
-Impute zero entries in the gene expression matrix based on the expression level in the similar cells and gene-gene correlation. Zero entries in the observed expression matrix come from molecule loss during the experiment ('dropout') or too low expression to be measured. We used Monte Carlo EM algorithm to sample the imputed values and learn the parameters. We also integrated the bulk RNASeq data for the similar cell types as the scRNASeq to infer the dropout rate.
+Impute zero entries in the gene expression matrix based on the expression level in the similar cells and gene-gene correlation. Zero entries in the observed expression matrix come from either molecule loss during the experiment ('dropout') or too low expression to be measured. We used Monte Carlo EM algorithm to sample the imputed values and learn the parameters. We also integrated the bulk RNASeq data for the similar cell types as the scRNASeq to infer the dropout rate.
 }
 \usage{
-scimpclu_bulk(dat, K0, bulk, M0=1, celltype = NULL, clus = NULL, K = 20, iter=10, est_z = 1,  impt_it = 5, max_lambda=F, est_lam = 1, penl =1, sigma0 = 100,  pi_alpha = 1, beta = NULL, lambda =NULL, sigma=NULL, mu=NULL, p_min = 0.8, cutoff=0.1, verbose=F)
-}
+scimpclu_bulk <- function(dat, K0, bulk, M0=1, celltype = NULL, clus = NULL, K = 20, iter=10, est_z = 1,  impt_it = 1, max_lambda=F, est_lam = 2,penl =1 ,sigma0 = 100,  pi_alpha = 1, beta = NULL, lambda =NULL, sigma=NULL, mu=NULL, p_min = 0.8, min_gene = 1000, cutoff=0.1, verbose=F, num_mc = 3)
 %- maybe also 'usage' for other objects documented here.
+}
 \arguments{
   \item{dat}{scRNASeq data matrix. Each row is a gene, each column is a cell.}
   \item{K0}{Number of latent gene modules. See details.}
@@ -32,9 +32,11 @@ scimpclu_bulk(dat, K0, bulk, M0=1, celltype = NULL, clus = NULL, K = 20, iter=10
     \item{lambda}{A M0 by K0 matrix. Initial values for the variances of factors. Each column is for a cell cluster. If null, lambda will initialize to be 1/M0. See details. }
      \item{sigma}{A G by M0 matrix. Initial values for the variance of idiosyncratic noises. Each column is for a cell cluster. If null, sigma will initialize to be 1. See details. }
      \item{mu}{A G by M0 matrix. Initial values for the gene expression mean of each cluster. Each column is for a cell cluster. If NULL, it will take the sample mean of cells weighted by the probability in each cluster. See details.}
-    \item{p_min}{Initialize parameters using genes expressed in at least \emph{p_min} proportion of cells. If the number genes selected is less than 500, select 500 genes with higest proportion of non zeros. Default = 0.8. }
+    \item{p_min}{Initialize parameters using genes expressed in at least \emph{p_min} proportion of cells. If the number genes selected is less than \emph{min_gene}, select \emph{min_gene} genes with higest proportion of non zeros. Default = 0.8. }
+    \item{min_gene}{Initialize parameters using genes expressed in at least \emph{p_min} proportion of cells. If the number genes selected is less than \emph{min_gene}, select \emph{min_gene} genes with higest proportion of non zeros. Default = 1000. }
     \item{cutoff}{The value below cutoff is treated as no expression. Default = 0.1. }
    \item{verbose}{Whether to show some intermediate results. Default = False.}
+   \item{num_mc}{The number of Gibbs steps to generate new imputed data.}
 }
 \details{
 %%  ~~ If necessary, more details than the description above ~~
@@ -79,16 +81,36 @@ Z. Hu
 scimpclu
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+library(foreach)
+library(doParallel)
+library(SIMPLE)
 
-## The function is currently defined as
-function (x)
-{
-  }
-}
+source("SIMPLE/utils.R")
+M0 = 3  # simulate number of clusters
+n = 300 # number of cells
+
+simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0)
+
+Y2 = simu_data$Y2
+K0 = 6 # number of factors
+
+registerDoParallel(cores = 6)  # parallel
+
+# estimate the parameters
+result <- scimpclu_bulk(Y2, K0, data.frame(simu_data$bulk), M0, celltype=rep(1, n), clus = NULL, K = 20, p_min = 0.5, min_gene = 200,cutoff=0.01, max_lambda=T)
+
+# sample imputed values
+result2 = do_impute(Y2, result$Y, result$beta, result$lambda, result$sigma, result$mu, result$pi, result$geneM, result$geneSd, rep(1, n), mcmc=50, burnin = 5, pg = result$pg, cutoff = 0.01)
+
+# evaluate cluster performance
+celltype_true = simu_data$Z
+mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true)
+# or redo clustering based on imputed values (sometimes work better for real data)
+getCluster(result2$impt, celltype_true, Ks = 20, M0 = M0)[[1]]
+
+
+
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.
-\keyword{ ~kwd1 }% use one of  RShowDoc("KEYWORDS")
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
+%\keyword{ ~kwd1 }% use one of  RShowDoc("KEYWORDS")
+%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
