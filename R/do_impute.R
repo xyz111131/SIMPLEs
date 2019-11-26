@@ -1,142 +1,130 @@
 
 #' @export
-do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_sd = NULL, celltype = NULL, mcmc=10, burnin = 2, verbose=F, pg = 0.5,cutoff=0.5)  # dat: original data, Y: imputed data
+do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_sd = NULL, celltype = NULL, mcmc = 10, burnin = 2, verbose = F, pg = 0.5, cutoff = 0.5) # dat: original data, Y: imputed data
 {
-  #initiation
-  G = nrow(Y)
-  n= ncol(Y)
-  M0 = ncol(mu)
-  K0 = ncol(beta)
+  # initiation
+  G <- nrow(Y)
+  n <- ncol(Y)
+  M0 <- ncol(mu)
+  K0 <- ncol(beta)
 
-  if(is.null(pos_mean)) pos_mean = rep(0,G)
-  if(is.null(pos_sd)) pos_sd = rep(1,G)
+  if (is.null(pos_mean)) pos_mean <- rep(0, G)
+  if (is.null(pos_sd)) pos_sd <- rep(1, G)
 
-  # if(!is.null(clus)){
-  #   z = matrix(0, n, M0)
-  #   for(i in 1:n) z[i, clus[i]] = 1
-  # }
+  if (is.null(celltype)) celltype <- rep(0, n)
+  MB <- max(celltype)
 
-  if(is.null(celltype)) celltype = rep(1,n)
-  MB = max(celltype)
+  if (length(pg) == 1) pg <- matrix(pg, G, MB)
 
-  if(length(pg)==1) pg = matrix(pg, G, MB)
+  Y <- (Y - pos_mean) / pos_sd
 
-  Y = (Y-pos_mean)/pos_sd
-
-  #A = diag(1,K0,K0)
+  # A = diag(1,K0,K0)
   # store result
-  loglik = matrix(0, n, M0)
-  tot = rep(0, mcmc+burnin)
-  record_impt = matrix(0, G, n)
-  record_EF = matrix(0, n, K0)
-  record_F2 = matrix(0, n, K0)
-  record_varF = matrix(0, n, K0^2)
+  loglik <- matrix(0, n, M0)
+  tot <- rep(0, mcmc + burnin)
+  record_impt <- matrix(0, G, n)
+  record_EF <- matrix(0, n, K0)
+  record_F2 <- matrix(0, n, K0)
+  record_varF <- matrix(0, n, K0^2)
 
-  consensus_cluster = matrix(0, n, n)
+  consensus_cluster <- matrix(0, n, n)
 
-  M = list() # (BSigma^-1B + Lambda^-1)^-1
-  Wm = list() # mean of each factor, K0*n
+  M <- list() # (BSigma^-1B + Lambda^-1)^-1
+  Wm <- list() # mean of each factor, K0*n
 
 
-  for(it in 1:(mcmc + burnin))
+  for (it in 1:(mcmc + burnin))
   {
     # sample Z
-    for(m in 1:M0)
+    for (m in 1:M0)
     {
-      beta2 = beta / sigma[,m]
-      M[[m]] = solve(t(beta)%*%beta2 + diag(1/lambda[m,]))
-      dt = sum(log(sigma[,m])) + sum(log(lambda[m,])) - log(det( M[[m]])) #!!! logdet !=det(log=T)
-      loglik[,m] = apply(Y, 2, function(x) {
-        x2 = x - mu[,m]
-        y = sum(x2/sigma[,m] * x2)
-        x2 = x2 %*% beta2
-        y = y- sum((x2 %*% M[[m]]) * x2)
+      beta2 <- beta / sigma[, m]
+      M[[m]] <- solve(t(beta) %*% beta2 + diag(1 / lambda[m, ]))
+      dt <- sum(log(sigma[, m])) + sum(log(lambda[m, ])) - log(det(M[[m]])) # !!! logdet !=det(log=T)
+      loglik[, m] <- apply(Y, 2, function(x) {
+        x2 <- x - mu[, m]
+        y <- sum(x2 / sigma[, m] * x2)
+        x2 <- x2 %*% beta2
+        y <- y - sum((x2 %*% M[[m]]) * x2)
 
-        return((-y - dt - G * log(2*PI))/2)
+        return((-y - dt - G * log(2 * PI)) / 2)
       })
     }
 
-    loglik = t(t(loglik) + log(pi))
-    sconst = rowMaxs(loglik)
+    loglik <- t(t(loglik) + log(pi))
+    sconst <- rowMaxs(loglik)
     loglik2 <- loglik - sconst
     lik <- exp(loglik2)
 
     # compute total loglik
-    tot[it] = sum(log(rowSums(lik) ) + sconst)
+    tot[it] <- sum(log(rowSums(lik)) + sconst)
 
-    z = lik / rowSums(lik) # n * M0
-    nz = colSums(z)
+    z <- lik / rowSums(lik) # n * M0
+    nz <- colSums(z)
 
     ## overall consensus clustering
-    if(it > burnin) consensus_cluster = consensus_cluster + z %*% t(z)
+    if (it > burnin) consensus_cluster <- consensus_cluster + z %*% t(z)
 
-    #print(nz)
-    #print(tot[it])
+    # print(nz)
+    # print(tot[it])
 
 
     # get expectation of W
-    for(m in 1:M0)
+    for (m in 1:M0)
     {
-      Wm[[m]] = t(M[[m]]%*% t(beta) %*% ((Y - mu[, m])/sigma[,m]) )# n * K0
+      Wm[[m]] <- t(M[[m]] %*% t(beta) %*% ((Y - mu[, m]) / sigma[, m])) # n * K0
     }
 
     # imputation
-    im =  apply(z,1, function(x) which(rmultinom(1, 1, x)==1)) # sample membership
-    #Y = foreach(i=1:n, .combine = cbind) %dopar% {
-    for(i in 1:n)
+    im <- apply(z, 1, function(x) which(rmultinom(1, 1, x) == 1)) # sample membership
+    # Y = foreach(i=1:n, .combine = cbind) %dopar% {
+    for (i in 1:n)
     {
-      m = im[i]
-      vr = M[[m]]
-      f_i = rmvnorm(1, Wm[[m]][i,], vr)
+      m <- im[i]
+      vr <- M[[m]]
+      f_i <- rmvnorm(1, Wm[[m]][i, ], vr)
 
-      ind = which(dat[,i] <=cutoff)
+      ind <- which(dat[, i] <= cutoff)
 
-      ms = (mu[ind,m] + beta[ind,] %*% t(f_i))*pos_sd[ind] + pos_mean[ind]
-      sds = sqrt(sigma[ind,m])*pos_sd[ind]
-      p = pg[ind, celltype[i]]
+      ms <- (mu[ind, m] + beta[ind, ] %*% t(f_i)) * pos_sd[ind] + pos_mean[ind]
+      sds <- sqrt(sigma[ind, m]) * pos_sd[ind]
+      p <- pg[ind, celltype[i]]
 
-      prob = pnorm(cutoff, mean = ms, sd = sds) # compute x<0 prob
-      prob_drop = (1-p) / (prob * p + (1-p))
-      I_drop = rbinom(length(ind), 1, prob_drop)
+      prob <- pnorm(cutoff, mean = ms, sd = sds) # compute x<0 prob
+      prob_drop <- (1 - p) / (prob * p + (1 - p))
+      I_drop <- rbinom(length(ind), 1, prob_drop)
 
       # imputation for dropout
-      impt = rep(0, length(ind))
-      impt[I_drop==1] = rnorm(sum(I_drop==1), ms[I_drop==1], sds[I_drop==1])
+      impt <- rep(0, length(ind))
+      impt[I_drop == 1] <- rnorm(sum(I_drop == 1), ms[I_drop == 1], sds[I_drop == 1])
 
       # imputation for non-dropout
-      if(sum(I_drop==0) >0) {
-        impt[I_drop==0] = rtnorm(sum(I_drop==0), upper =cutoff, mean = ms[I_drop==0], sd = sds[I_drop==0])
+      if (sum(I_drop == 0) > 0) {
+        impt[I_drop == 0] <- rtnorm(sum(I_drop == 0), upper = cutoff, mean = ms[I_drop == 0], sd = sds[I_drop == 0])
       }
 
-      #res = Y[,i]
-      #res[ind] = (impt - pos_mean[ind])/pos_sd[ind]
-      Y[ind,i] = (impt - pos_mean[ind])/pos_sd[ind]
-      #return(res)
+      Y[ind, i] <- (impt - pos_mean[ind]) / pos_sd[ind]
+      # return(res)
     }
-
-    #plot((dat[5,]-pos_mean[5])/pos_sd[5], Y[5,]);abline(c(0,1),col=2)
 
     # record
-    if(it > burnin)
-    {
-      record_impt = record_impt + Y
+    if (it > burnin) {
+      record_impt <- record_impt + Y
 
-      for(m in 1:M0)
+      for (m in 1:M0)
       {
-        record_EF = record_EF + Wm[[m]] * z[,m]
-        record_F2 = record_F2 + Wm[[m]]^2 * z[,m]
-        record_varF = record_varF + z[,m] %*% t(c(M[[m]]) )
+        record_EF <- record_EF + Wm[[m]] * z[, m]
+        record_F2 <- record_F2 + Wm[[m]]^2 * z[, m]
+        record_varF <- record_varF + z[, m] %*% t(c(M[[m]]))
       }
-
     }
-    #print loglik
-    if(verbose & it %% 20==0) {
+    # print loglik
+    if (verbose & it %% 20 == 0) {
       print(paste(it, tot[it]))
       print(nz)
     }
-
   }
 
-  varF = record_F2/mcmc - (record_EF/mcmc)^2 + record_varF[,seq(1,K0^2, by = (K0+1))]/mcmc
-  return(list("loglik" = tot, "impt" = (record_impt/mcmc)*pos_sd + pos_mean, "EF" = record_EF/mcmc, "varF0" = record_varF/mcmc, "varF" = varF, "consensus_cluster" = consensus_cluster/mcmc))
+  varF <- record_F2 / mcmc - (record_EF / mcmc)^2 + record_varF[, seq(1, K0^2, by = (K0 + 1))] / mcmc
+  return(list("loglik" = tot, "impt" = (record_impt / mcmc) * pos_sd + pos_mean, "EF" = record_EF / mcmc, "varF0" = record_varF / mcmc, "varF" = varF, "consensus_cluster" = consensus_cluster / mcmc))
 }
