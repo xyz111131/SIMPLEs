@@ -13,11 +13,6 @@ EM_impute <- function(Y, Y0, pg, M0, K0, cutoff, iter, beta, sigma, lambda, pi, 
 
   if (is.null(mu)) {
     if (M0 > 1 & !is.null(z)) {
-      # clus = apply(z, 1, which.max)
-      # for(m in 1:M0)
-      # {
-      #   mu[,m] = rowMeans(Y[,clus==m])
-      # }
       mu <- Y %*% z / n
     }
     else {
@@ -190,10 +185,6 @@ EM_impute <- function(Y, Y0, pg, M0, K0, cutoff, iter, beta, sigma, lambda, pi, 
       ) # K dimensional, n+K data
 
       nb <- fit1m$beta[, 1]
-      # max sigma
-      # sg = sapply(1:M0, function(m) {
-      #  (sum( (Y[g, ] - mu[g,m] - nb%*% t(Wm[[m]]) )^2 *z[,m] ) + sum((nb %*%Vm[[m]])* nb) + 1) / ( nz[m] + 3)
-      # }))
 
       sg <- sapply(1:M0, function(m) {
         (sum((Y[g, ] - mu[g, m] - nb %*% t(Wm[[m]]))^2 * z[, m]) + sum((nb %*% Vm[[m]]) * nb))
@@ -212,14 +203,6 @@ EM_impute <- function(Y, Y0, pg, M0, K0, cutoff, iter, beta, sigma, lambda, pi, 
       mt <- length(ind_m)
       if (mt > 1) {
         Em <- sapply(ind_m, function(m) { # 1:M0
-          # a = Wm[[m]]^2 * z0[,m] # windsor, n * K0
-          # b = colQuantiles(a[z0[,m] > 0.5, ], probs = 0.95)
-          # for(k in 1:K0)
-          # {
-          #   a[ a[,k] > b[k],k] = b[k]
-          #   #a[ a[,k] > b[k,2],k] = b[k,2]
-          # }
-          # colSums(a) + diag(M[[m]]) * nz0[m]
           colSums(Wm[[m]]^2 * z[, m]) + diag(M[[m]]) * nz[m]
         })
         # print(round(Em,4))
@@ -254,23 +237,6 @@ EM_impute <- function(Y, Y0, pg, M0, K0, cutoff, iter, beta, sigma, lambda, pi, 
 
     # max pi
     pi <- (nz + pi_alpha - 1) / (n + pi_alpha * M0 - M0)
-
-
-    # plot((dat[5,]-pos_mean[5])/pos_sd[5], Y[5,]);abline(c(0,1),col=2)
-    # boxplot(Y[803, ] + gene_mean[803]~celltype)
-    # print(beta[803,])
-    # print(sigma[803,])
-
-    # if(impt_it == 1)
-    # {
-    #   boxplot(Y[1344, ] + gene_mean[1344]~celltype)
-    #   print(beta[1344,])
-    #   print(sigma[1344,])
-    # }
-
-
-
-
     # plot beta every 10 iter
     if (verbose & it %% 10 == 0) { # == iter
       print(paste(it, tot[it]))
@@ -280,16 +246,10 @@ EM_impute <- function(Y, Y0, pg, M0, K0, cutoff, iter, beta, sigma, lambda, pi, 
       print(round(rowSums(lambda), 2))
 
       if (!is.null(celltype_true)) {
-        # matplot(apply(z, 1, which.max), pch=16, cex=0.5)# cell is ordered by true cell type
-        # y = cumsum(xtabs(~celltype_true))
-        # for(yt in y) abline(v = yt, col=2, lty=2)
         print("clustering randInd: ")
         print(mclust::adjustedRandIndex(im, celltype_true))
       }
 
-      ## plot(ggplot(melt(beta), aes(Var2,Var1)) +geom_tile(aes(fill = value)) +
-      ##       scale_fill_gradient2()+theme_bw()+xlab("")+ylab(""))
-      ## plot(rowMaxs(z), col= apply(z, 1, which.max)) #(z[,1]
     }
   }
 

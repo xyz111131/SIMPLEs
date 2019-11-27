@@ -142,18 +142,6 @@ scimpclu_bulk <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K
   res <- init_impute_bulk(dat[hq_ind, ], celltype, bulk[hq_ind, , drop = F ], pg[hq_ind, , drop = F], cutoff = cutoff, verbose = F) # verbose
 
   # init clustering
-<<<<<<< HEAD
-  if(is.null(clus))
-  {
-    #s = svd(t(scale(t(res))))
-    #km0 <- kmeans(s$v[,1:K], M0, iter.max = 80, nstart = 300)
-
-    Y2_scale = t(scale(t(res)))
-    s = svd(Y2_scale)
-    #km0 <- kmeans(t(Y2_scale)%*% s$u[,1:K], M0, iter.max = 80, nstart = 300)
-    km0 <- kmeans(s$v[,1:K], M0, iter.max = 80, nstart = 300)
-    clus = km0$cluster
-=======
   if (is.null(clus)) {
     # s = svd(t(scale(t(res))))
     # km0 <- kmeans(s$v[,1:K], M0, iter.max = 80, nstart = 300)
@@ -166,7 +154,6 @@ scimpclu_bulk <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K
       km0 <- kmeans(s$v[, 1:K], M0, iter.max = 80, nstart = 300)
     }
     clus <- km0$cluster
->>>>>>> format codes with Rstudio
 
     if (verbose) {
       print(xtabs(~clus))
