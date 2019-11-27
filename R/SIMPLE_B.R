@@ -14,7 +14,6 @@ PI <- pi
 # source('R/EM_impute.R')
 
 init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
-  # fit truncnorm for each cluster
   impute0 <- Y2
   G <- nrow(Y2)
   pg <- pg1 # matrix(0,G, M0)

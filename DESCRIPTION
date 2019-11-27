@@ -16,4 +16,4 @@ Imports:
     mixtools (>= 1.1.0),
     Rsolnp (>= 1.16),
     msm (>= 1.6.7)
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.1

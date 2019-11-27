@@ -1,9 +1,29 @@
 #' Sampling the imputed values and factors at given parameters.
-
-#' @param
-#' @return 
+#'
+#' \code{do_impute} get the posterior mean and variance for the imputed values and factors given the parameters, which can be returned from \emph{SIMPLE} or \emph{SIMPLE_B}.
+#'
+#' @param dat scRNASeq data matrix. Each row is a gene, each column is a cell.
+#' @param Y  Initial imputed data. Can return from \emph{scimpclu_bulk}.
+#' @param beta  Factor loadings.
+#' @param lambda  Variances of factors for each cluster.
+#' @param sigma  Variances of idiosyncratic noises for each cluster.
+#' @param mu  Mean expression for each cluster
+#' @param pi  Probabilites of cells belong to each cluster.
+#' @param pos_mean  Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix.
+#' @param pos_sd  Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix.
+#'
+#' @return \code{do_impute} returns a list of imputation results in the following order.
+#' \enumerate{
+#'   \item{loglik}{The log-likelihood of the imputed gene expression at each iteration.}
+#'   \item{impt}{A matrix contains the expectation of imputed expression.}
+#'   \item{EF}{Posterior means of factors}
+#'   \item{varF0}{Posterior mean of the covariance between factors}
+#'   \item{varF}{Posterior variances of factors}
+#' }
 #' @export
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
+#' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
+#'
 do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_sd = NULL, celltype = NULL, mcmc = 10, burnin = 2, verbose = F, pg = 0.5, cutoff = 0.5) # dat: original data, Y: imputed data
 {
   # initiation
