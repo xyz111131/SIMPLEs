@@ -1,5 +1,8 @@
 # SIMPLE: SIngle cell RNASeq iMPutation and celL clustEring
+=====================================
+Zhirui Hu
 
+## Introduction
 SIMPLE is a R package that imputes "dropout" values (i.e. zero or small entries)
 in the single cell RNASeq data based on cell similarities and gene correlations.
 The imputed matrix can be used for dimension reduction and visualization of the
@@ -23,3 +26,13 @@ called our method integrating bulk RNASeq data as **SIMPLE-B**, otherwise
 **SIMPLE**. We referred our toolset including SIMPLE and SIMPLE-B as
 **SIMPLEs**.
 
+## Installation
+------------
+The package is not on CRAN yet. You can use the following codes in `R` to
+install it.
+
+```r
+install.packages("devtools")
+library(devtools)_
+devtools::install_github("xyz111131/SIMPLEs")
+```
