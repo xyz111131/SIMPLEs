@@ -35,7 +35,6 @@ EM_impute(Y, Y0, pg, M0, K0, cutoff, iter, beta, sigma, lambda, pi, z, mu = NULL
    \item{pi_alpha}{The hyperparameter of the prior distribution of \eqn{\pi}. See details. }
    \item{verbose}{Whether to show some intermediate results. Default = False.}
 }
-}
 \details{
 %%  ~~ If necessary, more details than the description above ~~
 Suppose there are G genes and n cells. For each cell cluster, the gene expression follows \eqn{Y|Z=m~MVN(\mu_m, B\Lambda_m B^T + \Sigma_m)} where B is a G by K0 matrix, \eqn{\Sigma_m} is a G by G diagonal matrix whose diagonal entries are specified by \emph{sigma}, and \eqn{\Lambda_m} is a K0 by K0 diagonal matrix whose diagonal entries are specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}. We remove the overall mean of each gene before running the algorithm and all the parameters are estimated based on the normalized gene expression matrix. The overall mean is returned as \emph{geneM}.

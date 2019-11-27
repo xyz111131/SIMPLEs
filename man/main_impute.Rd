@@ -104,9 +104,4 @@ celltype_true = simu_data$Z
 mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true)
 # or redo clustering based on imputed values (sometimes work better for real data)
 getCluster(result2$impt, celltype_true, Ks = 20, M0 = M0)[[1]]
-
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-%\keyword{ ~kwd1 }% use one of  RShowDoc("KEYWORDS")
-%\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line
