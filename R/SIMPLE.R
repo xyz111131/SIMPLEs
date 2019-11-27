@@ -72,7 +72,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
 }
 
 #' @export
-scimpclu <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.5, K = 10, min_gene = 300, num_mc = 3, fix_num = F, clus_opt = 2, lower = -Inf, upper = Inf) {
+SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.5, K = 10, min_gene = 300, num_mc = 3, fix_num = F, clus_opt = 2, lower = -Inf, upper = Inf) {
   # EM algorithm
   # initiation
   G <- nrow(dat)

@@ -1,5 +1,9 @@
+#' Sampling the imputed values and factors at given parameters.
 
+#' @param
+#' @return 
 #' @export
+#' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_sd = NULL, celltype = NULL, mcmc = 10, burnin = 2, verbose = F, pg = 0.5, cutoff = 0.5) # dat: original data, Y: imputed data
 {
   # initiation
