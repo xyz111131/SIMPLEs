@@ -41,7 +41,7 @@ LLwZ <- function(par, xbar, Sx, r01, p, delta = 0) {
 #' @param p_min lower bound of the probability of the normal component. Default
 #'   = 0.6.
 #' @param p_max upper bound of the probability of the normal component. Can be either a scaler or a vector. If it is a vector, each element is the upper bound for a gene. Default = 1.
-#' @returns \code{ztruncnorm} returns a list of results in the following order.
+#' @return \code{ztruncnorm} returns a list of results in the following order.
 #' \enumerate{
 #'   \item{param}{A matrix with mean and standard deviation for each gene. }
 #'   \item{pg}{A vector for the probablity of the normal component.}

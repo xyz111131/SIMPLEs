@@ -158,7 +158,7 @@ membership. Then it runs another rounds of Monte Carlo EM using all the
 genes. In the initial phase, we use the genes with dropout rate less than
 \emph{1 - p_min}; if the number of genes is less than \emph{min_gene}, we
 rank the genes by the number cells with nonzero expression and keep the top
-\emph{min_gene} genes. If \emph{fix_num} is true, then we always keep the top 
+\emph{min_gene} genes. If \emph{fix_num} is true, then we always keep the top
 \emph{min_gene} genes in the initial phase.
 
 If \emph{num_mc} > 0, this function will sample multiple imputed values and cell factors at MLEs of B, \eqn{\Lambda_m}, etc by Gibbs sampling.

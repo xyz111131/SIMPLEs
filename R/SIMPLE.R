@@ -48,12 +48,10 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 
             # imputation for dropout
             impute[ind[I_drop == 1], j] <- rnorm(sum(I_drop == 1), ms[I_drop == 1], sds[I_drop == 1])
-            # åimpute[ind[I_drop==1],j] = ms[I_drop==1]
-
             # imputation for non-dropout
             if (sum(I_drop == 0) > 0) {
-                # r = (cutoff - ms[I_drop==0])/sds[I_drop==0]
-                impute[ind[I_drop == 0], j] <- rtnorm(sum(I_drop == 0), upper = cutoff, mean = ms[I_drop == 0], sd = sds[I_drop == 0])  # ms[I_drop==0] - sds[I_drop==0] * dnorm(r)/pnorm(r)
+              # ms[I_drop==0] - sds[I_drop==0] * dnorm(r)/pnorm(r)
+              impute[ind[I_drop == 0], j] <- rtnorm(sum(I_drop == 0), upper = cutoff, mean = ms[I_drop == 0], sd = sds[I_drop == 0])
             }
         }
     }
