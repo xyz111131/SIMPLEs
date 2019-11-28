@@ -3,12 +3,12 @@
 #' \code{do_impute} get the posterior mean and variance for the imputed values and factors given the parameters, which can be returned from \emph{SIMPLE} or \emph{SIMPLE_B}.
 #'
 #' @param dat scRNASeq data matrix. Each row is a gene, each column is a cell.
-#' @param Y  Initial imputed data. Can return from \emph{scimpclu_bulk}.
-#' @param beta  Factor loadings.
-#' @param lambda  Variances of factors for each cluster.
-#' @param sigma  Variances of idiosyncratic noises for each cluster.
-#' @param mu  Mean expression for each cluster
-#' @param pi  Probabilites of cells belong to each cluster.
+#' @param Y  Initial imputed data, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
+#' @param beta  Factor loadings, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
+#' @param lambda  Variances of factors for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
+#' @param sigma  Variances of idiosyncratic noises for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
+#' @param mu  Mean expression for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
+#' @param pi  Probabilites of cells belong to each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
 #' @param pos_mean  Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix. Default is NULL.
 #' @param pos_sd  Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix.
 #' Default is NULL.
@@ -151,5 +151,5 @@ do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_
   }
 
   varF <- record_F2 / mcmc - (record_EF / mcmc)^2 + record_varF[, seq(1, K0^2, by = (K0 + 1))] / mcmc
-  return(list("loglik" = tot, "impt" = (record_impt / mcmc) * pos_sd + pos_mean, "EF" = record_EF / mcmc, "varF0" = record_varF / mcmc, "varF" = varF, "consensus_cluster" = consensus_cluster / mcmc))
+  return(list("loglik" = tot, "impt" = (record_impt / mcmc) * pos_sd + pos_mean, "EF" = record_EF / mcmc, "varF" = varF, "consensus_cluster" = consensus_cluster / mcmc))
 }

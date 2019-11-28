@@ -135,7 +135,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
 #' K0 = 6 # number of factors
 #' registerDoParallel(cores = 6)  # parallel
 #' # estimate the parameters
-#' result <- scimpclu(Y2, K0, M0, celltype=rep(1, n), clus = NULL, K = 20, p_min = 0.5, max_lambda=T, min_gene = 200,cutoff=0.01)
+#' result <- SIMPLE(Y2, K0, M0, clus = NULL, K = 20, p_min = 0.5, max_lambda=T, min_gene = 200,cutoff=0.01)
 #' # sample imputed values
 #' result2 = do_impute(Y2, result$Y, result$beta, result$lambda, result$sigma, result$mu, result$pi, result$geneM, result$geneSd, rep(1, n), mcmc=50, burnin = 5, pg = result$pg, cutoff = 0.01)
 #' # evaluate cluster performance
@@ -147,14 +147,13 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
 #' @export
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
-SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.5, K = 10, min_gene = 300, num_mc = 3, fix_num = F, clus_opt = 2, lower = -Inf, upper = Inf) {
+SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.5, K = 10, min_gene = 300, num_mc = 3, fix_num = F, clus_opt = 2, lower = -Inf, upper = Inf, mcmc = 50, burnin = 5) {
   # EM algorithm
   # initiation
   G <- nrow(dat)
   n <- ncol(dat)
   z <- NULL
   Y <- dat # imputed matrix
-  # gene_mean = rep(0,G) # remove gene mean for factor, otherwise may be confounded with B, i.e. u = B1, f1=rep(1,n)
   pg <- matrix(p_min, G, M0)
 
   pi <- rep(1 / M0, M0) # prob of z
@@ -328,23 +327,6 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
 
 
 
-  # if(verbose){
-  #   par(mfrow=c(2,2), pch= 16)
-  #   plot(dat[hq_ind[5],], Y[hq_ind[5],], xlab = "data", ylab = "imputed", main = "hq gene"); abline(c(0,1), col=2)
-  #   plot(dat[lq_ind[5],], Y[lq_ind[5],], xlab = "data", ylab = "imputed", main = "lq gene"); abline(c(0,1), col=2)
-  #
-  #   k = which.max(abs(beta[lq_ind[5],]))
-  #   ef = sapply(1:n, function(i) impute_hq$Ef[[im[i]]][i,k])
-  #   plot(ef, Y[lq_ind[5],], col=celltype_true, ylab="imputed", xlab="F"); abline(h=mu[lq_ind[5],], col=1:M0, lty=2)
-  #   plot(ef, dat[lq_ind[5],],col=celltype_true, ylab="data", xlab="F")
-  #
-  #
-  #   hist(sigma[,1], xlab = "sigma")
-  #   # boxplot(Y[5, ]~celltype_true)
-  #   # boxplot(dat[5, ]~celltype_true)
-  # }
-
-
   print("impute for all genes")
   impute_result <- EM_impute(Y, dat, pg, M0, K0, cutoff, iter, beta, sigma, impute_hq$lambda, impute_hq$pi, impute_hq$z, mu = NULL, celltype = clus, penl, est_z, max_lambda, est_lam, impt_it = 1, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc, lower = lower, upper = upper)
 
@@ -356,5 +338,11 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
   }
   impute <- t(impute) * impute_result$geneSd + impute_result$geneM
 
-  return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Ef" = impute_result$Ef, "Varf" = impute_result$Varf, "geneM" = impute_result$geneM, "geneSd" = impute_result$geneSd, "Yimp0" = impute, "Y" = impute_result$Y, "pg" = pg, "initclus" = clus))
+  if(mcmc > 0)
+  {
+   result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM, impute_result$geneSd, rep(1, n), mcmc= mcmc, burnin = burnin, pg = impute_result$pg, cutoff = cutoff)
+  }
+
+
+  return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Ef" = impute_result$Ef, "Varf" = impute_result$Varf, "Yimp0" = impute, "Y" = impute_result$Y, "pg" = pg, "initclus" = clus))
 }
