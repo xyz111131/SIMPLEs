@@ -7,12 +7,6 @@
 #' @import Rsolnp
 #' @importFrom mixtools rmvnorm
 #' @importFrom msm rtnorm
-
-PI <- pi
-
-# source('R/fit_ztrunc_0228.R')
-# source('R/EM_impute.R')
-
 init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
   impute0 <- Y2
   G <- nrow(Y2)
