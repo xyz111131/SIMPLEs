@@ -1,3 +1,76 @@
+#' Monte Carlo EM algorithm for imputation and clustering
+#'
+#'Monte Carlo EM algorithm to sample the imputed values, cluster the
+#' cells and learn the correlation structure of genes in each cluster.
+#'
+#' @details
+#' Suppose there are G genes and n cells. For each cell cluster, the gene
+#'   expression follows \eqn{Y|Z=m~MVN(\mu_m, B\Lambda_m B^T + \Sigma_m)} where
+#'   B is a G by K0 matrix, \eqn{\Sigma_m} is a G by G diagonal matrix whose
+#'   diagonal entries are specified by \emph{sigma}, and \eqn{\Lambda_m} is a K0
+#'   by K0 diagonal matrix whose diagonal entries are specified by
+#'   \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}. We remove
+#'   the overall mean of each gene before running the algorithm and all the
+#'   parameters are estimated based on the normalized gene expression matrix.
+#'   The overall mean is returned as \emph{geneM}.
+#'
+#' @param Y An initial imputed gene expression matrix.
+#' @param Y0 Original scRNASeq data matrix.
+#' @param pg A matrix for dropout rate of each cell type. Each row is a gene,
+#'   each column is the dropout rate of a cell type. The columns should be
+#'   ordered as the cell type label in \emph{clus}.
+#' @param M0 Number of clusters.
+#' @param K0 Number of latent gene modules.
+#' @param cutoff The value below cutoff is treated as no expression.
+#' @param iter Number of EM steps.
+#' @param beta A G by K0 matrix. Initial values for factor loadings (B). See
+#'   details.
+#' @param sigma A G by M0 matrix. Initial values for the variance of
+#'   idiosyncratic noises. Each column is for a cell cluster. See details.
+#' @param lambda A M0 by K0 matrix. Initial values for the variances of factors.
+#'   Each column is for a cell cluster. See details.
+#' @param pi A vector for initial probabilites of cells belong to each cluster.
+#' @param z A n by M0 matrix for the probability of each cell belonging to each
+#'   cluster. Can be initialized as the one-hot encoding of cluster membership
+#'   of cells. If null, z will be updated in the first iteration.
+#' @param mu A G by M0 matrix. Initial values for the gene expression mean of
+#'   each cluster. Each column is for a cell cluster. If NULL, it will take the
+#'   sample mean of cells weighted by the probability in each cluster. See
+#'   details.
+#' @param celltype A numeric vector for labels of cells in the scRNASeq. Each
+#'   cell type has different dropout rate. If input bulk RNASeq data, each cell
+#'   type has corresponding mean expression in the bulk RNASeq data. The labels
+#'   must start from 1 to the number of types. If NULL, all cells are treated as
+#'   a single cell type.
+#' @param penl L1 penalty for the factor loadings.
+#' @param est_z The iteration starts to update z.
+#' @param max_lambda Whether to maximize over lambda.
+#' @param est_lam The iteration starts to estimate lambda.
+#' @param impt_it The iteration starts to sample new imputed values.
+#' @param sigma0 The variance of the prior distribution of \eqn{\mu}.
+#' @param pi_alpha The hyperparameter of the prior distribution of \eqn{\pi}.
+#'   See details.
+#' @param verbose Whether to show some intermediate results. Default = False.
+#'
+#' @return \code{EM_impute} returns a list of results in the following order.
+#' \enumerate{
+#'\item{loglik}{The log-likelihood of the imputed gene expression at each iteration.}
+#' \item{pi}{Probabilites of cells belong to each cluster.}
+#' \item{mu}{Mean expression for each cluster.}
+#' \item{sigma}{Variances of idiosyncratic noises for each cluster.}
+#' \item{beta}{Factor loadings.}
+#' \item{lambda}{Variances of factors for each cluster.}
+#' \item{z}{The probability of each cell belonging to each cluster.}
+#' \item{Ef}{Conditonal expection the factors for each cluster \eqn{E(f_i|z_i = m)}. A list with length M0, each element in the list is a n by K0 matrix.}
+#' \item{Varf}{Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}. A list with length M0, each element in the list is a K0 by K0 matrix.}
+#' \item{Y}{Last sample of imputed matrix.}
+#' \item{geneM}{Overall mean of each gene expression. See details. } %Need to scale Y back to get the imputed expression matrix.
+#' \item{geneSd}{Equal to 1 for each gene.}
+#' }
+#' 
+#' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
+#' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
+
 EM_impute <- function(Y, Y0, pg, M0, K0, cutoff, iter, beta, sigma, lambda, pi, z, mu = NULL, celltype = NULL, penl = 1, est_z = 2, max_lambda = T, est_lam = 2, impt_it = 5, sigma0 = 100, pi_alpha = 1, verbose = F, num_mc = 3, lower = -Inf, upper = Inf) # if est_z = 1, not use initial values of z
 {
   Y[Y > upper] <- upper

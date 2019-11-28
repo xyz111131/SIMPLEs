@@ -1,3 +1,20 @@
+#' Initialize imputed matrix integrating bulk RNASeq
+#'
+#' @details
+#'If the scRNASeq data does not have the cell type information, then all cells
+#'   can be treated as a single type and the input bulk RNASeq should also have
+#'   one column that is the mean expression over all cell types.
+#' @param Y2  scRNASeq data matrix. Each row is a gene, each column is a cell.
+#' @param clus A numeric vector for the cell type labels of cells in the scRNASeq. Each cell type has corresponding the mean expression in the bulk RNASeq data. The labels must start from 1 to the number of types. See details.
+#' @param bulk Bulk RNASeq data matrix. Each row is a gene which must be ordered the same as the scRNASeq data. Each column is a cell type which must be ordered as the cell type label in \emph{clus}.
+#' @param pg1 A data matrix for the dropout rate for each gene which is the ratio between mean expression in the scRNASeq and bulk RNASeq. Each row is a gene which must be ordered the same as the scRNASeq data. Each column is a cell type which must be ordered as the cell type label in \emph{clus}.
+#' @param cutoff The value below cutoff is treated as no expression. Default = 0.1.
+#' @param verbose Whether to plot some intermediate result. Default = False.
+#'
+#' @return Imputed gene expression matrix
+#' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
+#' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
+
 init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
   # fit truncnorm for each cluster
   impute <- Y2
