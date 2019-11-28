@@ -9,9 +9,9 @@
 #' @param sigma  Variances of idiosyncratic noises for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
 #' @param mu  Mean expression for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
 #' @param pi  Probabilites of cells belong to each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
-#' @param pos_mean  Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix, output from \emph{SIMPLE_B} or \emph{SIMPLE}. 
-#' Default is NULL. 
-#' @param pos_sd  Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix, output from \emph{SIMPLE_B} or \emph{SIMPLE}. Default is NULL. 
+#' @param pos_mean  Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
+#' Default is NULL.
+#' @param pos_sd  Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix, output from \emph{SIMPLE_B} or \emph{SIMPLE}. Default is NULL.
 #' Default is NULL.
 #'
 #' @return \code{do_impute} returns a list of imputation results in the following order.
