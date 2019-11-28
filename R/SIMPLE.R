@@ -142,7 +142,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
 #' \item{geneSd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix. }
 #' \item{initclus}{Output initial cluster results.}
 #' }
-#' @seealso SIMPLE_B
+#' @seealso [SIMPLE_B()]
 #' @examples
 #' library(foreach) \cr
 #' library(doParallel) \cr

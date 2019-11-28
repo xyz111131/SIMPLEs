@@ -156,7 +156,7 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #' \item{geneM}{Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix. }
 #' \item{geneSd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix. }
 #' }
-#' @seealso SIMPLE
+#' @seealso [SIMPLE()]
 #' @examples
 #' library(foreach) \cr
 #' library(doParallel) \cr
