@@ -99,28 +99,6 @@ A list with length M0, each element in the list is a K0 by K0 matrix.}
 \item{geneSd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix. }
 \item{initclus}{Output initial cluster results.}
 }
-\seealso{SIMPLE_B}
-\examples{
-library(foreach)
-library(doParallel)
-library(SIMPLE)
-source("SIMPLE/utils.R")
-M0 = 3  # simulate number of clusters
-n = 300 # number of cells
-simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0)
-Y2 = simu_data$Y2
-K0 = 6 # number of factors
-registerDoParallel(cores = 6)  # parallel
-# estimate the parameters
-result <- scimpclu(Y2, K0, M0, celltype=rep(1, n), clus = NULL, K = 20, p_min = 0.5, max_lambda=T, min_gene = 200,cutoff=0.01)
-# sample imputed values
-result2 = do_impute(Y2, result$Y, result$beta, result$lambda, result$sigma, result$mu, result$pi, result$geneM, result$geneSd, rep(1, n), mcmc=50, burnin = 5, pg = result$pg, cutoff = 0.01)
-# evaluate cluster performance
-celltype_true = simu_data$Z
-mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true)
-# or redo clustering based on imputed values (sometimes work better for real data)
-getCluster(result2$impt, celltype_true, Ks = 20, M0 = M0)[[1]]
-}
 }
 \description{
 \code{SIMPLE} imputes zeros in the gene expression data using the expression level in
@@ -130,24 +108,54 @@ be measured. We used Monte Carlo EM algorithm to sample the imputed values and
 learn the parameters.
 }
 \details{
-\details{ We assume that the cells come from M0 clusters. Within each cell
+We assume that the cells come from M0 clusters. Within each cell
 cluster, the 'true' gene expression is modeled by a multivariate Gaussian
 distribution whose covariance matrix can be composed into a low rank matrix
 (a couple of latent gene modules) and idiosyncratic noises. Gene modules are
 shared among cell clusters though the coexpression level of each gene module
-can be different. Suppose there are G genes and n cells. For each cell
+can be different. \cr
+Suppose there are G genes and n cells. For each cell
 cluster, the gene expression follows \eqn{Y|Z=m~MVN(\mu_m, B\Lambda_m B^T +
 \Sigma_m)} where B is a G by K0 matrix, \eqn{\Sigma_m} is a G by G diagonal
 matrix whose diagonal entries are specified by \emph{sigma}, and
 \eqn{\Lambda_m} is a K0 by K0 diagonal matrix whose diagonal entries are
-specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}.
+specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}. \cr
+
 The algorithm first runs Monte Carlo EM using only the genes with low dropout
 rate (initial phase) and initializes factor loadings and clustering
 membership. Then it runs another rounds of Monte Carlo EM using all the
 genes. In the initial phase, we used the genes with dropout rate less than
 \emph{1 - p_min}; if the number of genes is less than \emph{min_gene}, we
 ranked the genes by the number cells with nonzero expression and kept the top
-\emph{min_gene} genes. }
+\emph{min_gene} genes.
+}
+\examples{
+library(foreach) \cr
+library(doParallel) \cr
+library(SIMPLE) \cr
+source("SIMPLE/utils.R") \cr
+
+# simulate number of clusters \cr
+M0 = 3 \cr
+# number of cells \cr
+n = 300 \cr
+simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0) \cr
+Y2 = simu_data$Y2 \cr
+K0 = 6 # number of factors \cr
+registerDoParallel(cores = 6)  # parallel \cr
+# estimate the parameters \cr
+result <- scimpclu(Y2, K0, M0, celltype=rep(1, n), clus = NULL, K = 20, p_min = 0.5, max_lambda=T, min_gene = 200,cutoff=0.01) \cr
+# sample imputed values \cr
+result2 = do_impute(Y2, result$Y, result$beta, result$lambda, result$sigma, result$mu, result$pi, result$geneM, result$geneSd, rep(1, n), mcmc=50, burnin = 5, pg = result$pg, cutoff = 0.01) \cr
+# evaluate cluster performance \cr
+celltype_true = simu_data$Z \cr
+mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true) \cr
+# or redo clustering based on imputed values (sometimes work better for real data) \cr
+getCluster(result2$impt, celltype_true, Ks = 20, M0 = M0)[[1]] \cr
+
+}
+\seealso{
+SIMPLE_B
 }
 \author{
 Zhirui Hu, \email{zhiruihu@g.harvard.edu}

@@ -38,6 +38,6 @@ install it.
 
 ```r
 install.packages("devtools")
-library(devtools)_
+library(devtools)
 devtools::install_github("xyz111131/SIMPLEs")
 ```

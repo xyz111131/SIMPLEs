@@ -1,4 +1,4 @@
-#' Sampling the imputed values and factors at given parameters.
+#' Sampling multiple copies of imputed values and cell factors at given parameters.
 #'
 #' \code{do_impute} get the posterior mean and variance for the imputed values and factors given the parameters, which can be returned from \emph{SIMPLE} or \emph{SIMPLE_B}.
 #'
@@ -9,17 +9,19 @@
 #' @param sigma  Variances of idiosyncratic noises for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
 #' @param mu  Mean expression for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
 #' @param pi  Probabilites of cells belong to each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
-#' @param pos_mean  Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix. Default is NULL.
-#' @param pos_sd  Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix.
+#' @param pos_mean  Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix, output from \emph{SIMPLE_B} or \emph{SIMPLE}. 
+#' Default is NULL. 
+#' @param pos_sd  Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix, output from \emph{SIMPLE_B} or \emph{SIMPLE}. Default is NULL. 
 #' Default is NULL.
 #'
 #' @return \code{do_impute} returns a list of imputation results in the following order.
 #' \enumerate{
 #'   \item{loglik}{The log-likelihood of the imputed gene expression at each iteration.}
 #'   \item{impt}{A matrix contains the expectation of imputed expression.}
+#'  \item{impt_var}{A matrix contains the variance of each imputed entry.}
 #'   \item{EF}{Posterior means of factors}
-#'   \item{varF0}{Posterior mean of the covariance between factors}
-#'   \item{varF}{Posterior variances of factors}
+#'   \item{varF}{Posterior covariance matrix of factors}
+#'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. }
 #' }
 #' @export
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
@@ -48,6 +50,7 @@ do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_
   loglik <- matrix(0, n, M0)
   tot <- rep(0, mcmc + burnin)
   record_impt <- matrix(0, G, n)
+  record_impt2 <- matrix(0, G, n)
   record_EF <- matrix(0, n, K0)
   record_F2 <- matrix(0, n, K0)
   record_varF <- matrix(0, n, K0^2)
@@ -135,6 +138,7 @@ do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_
     # record
     if (it > burnin) {
       record_impt <- record_impt + Y
+      record_impt2 <- record_impt2 + Y^2
 
       for (m in 1:M0)
       {
@@ -151,5 +155,6 @@ do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_
   }
 
   varF <- record_F2 / mcmc - (record_EF / mcmc)^2 + record_varF[, seq(1, K0^2, by = (K0 + 1))] / mcmc
-  return(list("loglik" = tot, "impt" = (record_impt / mcmc) * pos_sd + pos_mean, "EF" = record_EF / mcmc, "varF" = varF, "consensus_cluster" = consensus_cluster / mcmc))
+  return(list("loglik" = tot, "impt" = (record_impt / mcmc) * pos_sd + pos_mean, "impt_var" = record_impt2/mcmc - (record_impt / mcmc)^2,
+    "EF" = record_EF / mcmc, "varF" = varF, "consensus_cluster" = consensus_cluster / mcmc))
 }

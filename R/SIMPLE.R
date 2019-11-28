@@ -1,4 +1,19 @@
-init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
+#' Initialize imputation for each individual gene
+#'
+#' @details
+#' Fit each gene expression by a zero-inflated censored Gaussian distribution and return a random sample of imputed values for initialization
+#' @param Y2  scRNASeq data matrix. Each row is a gene, each column is a cell.
+#' @param M0 number of cell types
+#' @param clus A numeric vector for the cell type labels of cells in the scRNASeq. The labels must start from 1 to the number of types (M0).
+#' @param p_min Restrict the max dropout rate to be 1-p_min. Default = 0.6. 
+#' @param cutoff The value below cutoff is treated as no expression. Default = 0.1.
+#' @param verbose Whether to plot some intermediate result. Default = False.
+#'
+#' @return Imputed gene expression matrix, treat each gene independently
+#' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
+#' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
+
+init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
   # fit truncnorm for each cluster
   impute <- Y2
   G <- nrow(Y2)
@@ -59,31 +74,39 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
 #' similar cells and gene-gene correlation. Zero entries in the observed expression matrix
 #' come from molecule loss during the experiment ('dropout') or too low expression to
 #' be measured. We used Monte Carlo EM algorithm to sample the imputed values and
-#' learn the parameters.
+#' obtain MLEs of all the parameters.
 #'
-#' \details{ We assume that the cells come from M0 clusters. Within each cell
+#' @details
+#' We assume that the cells come from M0 clusters. Within each cell
 #' cluster, the 'true' gene expression is modeled by a multivariate Gaussian
 #' distribution whose covariance matrix can be composed into a low rank matrix
 #' (a couple of latent gene modules) and idiosyncratic noises. Gene modules are
 #' shared among cell clusters though the coexpression level of each gene module
-#' can be different. Suppose there are G genes and n cells. For each cell
+#' can be different. \cr
+#' Suppose there are G genes and n cells. For each cell
 #' cluster, the gene expression follows \eqn{Y|Z=m~MVN(\mu_m, B\Lambda_m B^T +
 #' \Sigma_m)} where B is a G by K0 matrix, \eqn{\Sigma_m} is a G by G diagonal
 #' matrix whose diagonal entries are specified by \emph{sigma}, and
 #' \eqn{\Lambda_m} is a K0 by K0 diagonal matrix whose diagonal entries are
-#' specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}.
+#' specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}. \cr
+#'
 #' The algorithm first runs Monte Carlo EM using only the genes with low dropout
 #' rate (initial phase) and initializes factor loadings and clustering
 #' membership. Then it runs another rounds of Monte Carlo EM using all the
-#' genes. In the initial phase, we used the genes with dropout rate less than
+#' genes. In the initial phase, we use the genes with dropout rate less than
 #' \emph{1 - p_min}; if the number of genes is less than \emph{min_gene}, we
-#' ranked the genes by the number cells with nonzero expression and kept the top
-#' \emph{min_gene} genes. }
+#' rank the genes by the number cells with nonzero expression and keep the top
+#' \emph{min_gene} genes. If \emph{fix_num} is true, then we always keep the top 
+#' \emph{min_gene} genes in the initial phase.
+#' 
+#' If \emph{num_mc} > 0, this function will sample multiple imputed values and cell factors at MLEs of B, \eqn{\Lambda_m}, etc by Gibbs sampling.
+#' Based on multiple imputed values, it will evaluate cluster stability for each cell (\emph{consensus_cluster}).
+#' It will also output the posterior mean and variance for the imputed values and cell factors.
 #'
 #' @param dat scRNASeq data matrix. Each row is a gene, each column is a cell.
 #' @param K0 Number of latent gene modules. See details.
 #' @param M0 Number of clusters. See details.
-#' @param clus Initial clustering of scRNASeq data. If NULL, the function will use PCA and Kmeans to do clustering initially.
+#' @param clus Initial clustering of scRNASeq data. If NULL, the function will use PCA and Kmeans to do clustering initially. 
 #' @param K The number of PCs used in the initial clustering. Default = 20.
 #' @param iter Number of EM iterations for full data set. See details.
 #' @param est_z The iteration starts to update z.
@@ -99,9 +122,12 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
 #' @param mu A G by M0 matrix. Initial values for the gene expression mean of each cluster. Each column is for a cell cluster. If NULL, it will take the sample mean of cells weighted by the probability in each cluster. See details.
 #' @param p_min Initialize parameters using genes expressed in at least \emph{p_min} proportion of cells. If the number genes selected is less than \emph{min_gene}, select \emph{min_gene} genes with higest proportion of non zeros. Default = 0.8.
 #' @param min_gene Minimal number of genes used in the initial phase. See details.
+#' @param fix_num If true, always use top \emph{min_gene} genes with higest proportion of non zeros in the initial phase. Default  = F. See details.
 #' @param cutoff The value below cutoff is treated as no expression. Default = 0.1.
 #' @param verbose Whether to show some intermediate results. Default = False.
-#' @param num_mc The number of Gibbs steps to generate new imputed data.
+#' @param num_mc The number of Gibbs steps for generating imputed data when the parameters are updated during Monte Carlo EM. Default = 3.
+#' @param mcmc The number of Gibbs steps to sample imputed data after EM. Default = 50. 
+#' @param burnin The number of burnin steps before sample imputed data after EM. Default = 2.
 #' @return \code{SIMPLE} returns a list of results in the following order.
 #' \enumerate{
 #' \item{loglik}{The log-likelihood of the imputed gene expression at each iteration.}
@@ -115,39 +141,43 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F) {
 #' A list with length M0, each element in the list is a n by K0 matrix.}
 #' \item{Varf}{Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}.
 #' A list with length M0, each element in the list is a K0 by K0 matrix.}
-#' \item{Yimp0}{A matrix contains the expectation of imputed expression.}
-#' \item{Y}{Last sample of imputed matrix.}
-#' \item{pg}{A G by M0 matrix, dropout rate for each gene in each cluster.}
-#' \item{geneM}{Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix. }
-#' \item{geneSd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix. }
+#' \item{Yimp0}{A matrix contains the expectation of gene expression.}
+#' \item{pg}{A G by M0 matrix, dropout rate for each gene in each cluster defined by initial clustering.}
 #' \item{initclus}{Output initial cluster results.}
+#'  \item{impt}{A matrix contains the mean of each imputed entry by sampling multiple imputed values at MLE. If mcmc <= 0, output imputed expressoin matrix at last step of EM}
+#'  \item{impt_var}{A matrix contains the variance of each imputed entry by sampling multiple imputed values at MLE. NULL if mcmc <= 0.}
+#'  \item{EF}{Posterior means of factors given observed data. If mcmc <= 0, output conditional mean for each cluster at the last step of EM. }
+#'  \item{varF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster at the last step of EM.}
+#'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 #' }
-#' \seealso{SIMPLE_B}
-#' \examples{
-#' library(foreach)
-#' library(doParallel)
-#' library(SIMPLE)
-#' source("SIMPLE/utils.R")
-#' M0 = 3  # simulate number of clusters
-#' n = 300 # number of cells
-#' simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0)
-#' Y2 = simu_data$Y2
-#' K0 = 6 # number of factors
-#' registerDoParallel(cores = 6)  # parallel
-#' # estimate the parameters
-#' result <- SIMPLE(Y2, K0, M0, clus = NULL, K = 20, p_min = 0.5, max_lambda=T, min_gene = 200,cutoff=0.01)
-#' # sample imputed values
-#' result2 = do_impute(Y2, result$Y, result$beta, result$lambda, result$sigma, result$mu, result$pi, result$geneM, result$geneSd, rep(1, n), mcmc=50, burnin = 5, pg = result$pg, cutoff = 0.01)
-#' # evaluate cluster performance
-#' celltype_true = simu_data$Z
-#' mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true)
-#' # or redo clustering based on imputed values (sometimes work better for real data)
-#' getCluster(result2$impt, celltype_true, Ks = 20, M0 = M0)[[1]]
-#' }
-#' @export
+#' @seealso SIMPLE_B
+#' @examples
+#' library(foreach) \cr
+#' library(doParallel) \cr
+#' library(SIMPLE) \cr
+#' source("SIMPLE/utils/utils.R") \cr
+#'
+#' # simulate number of clusters \cr
+#' M0 = 3 \cr
+#' # number of cells \cr
+#' n = 300 \cr
+#' simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0) \cr
+#' Y2 = simu_data$Y2 \cr
+#' K0 = 6 # number of factors \cr
+#' registerDoParallel(cores = 6)  # parallel \cr
+#' # estimate the parameters and sample imputed values \cr
+#' result <- SIMPLE(Y2, K0, M0, clus = NULL, K = 20, p_min = 0.5, max_lambda=T, min_gene = 200,cutoff=0.01) \cr
+#' # sample imputed values \cr
+#' #' # evaluate cluster performance \cr
+#' celltype_true = simu_data$Z \cr
+#' mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true) \cr
+#' # or redo clustering based on imputed values (sometimes work better for real data) \cr
+#' getCluster(result$impt, celltype_true, Ks = 20, M0 = M0)[[1]] \cr
+#'
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
-SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.5, K = 10, min_gene = 300, num_mc = 3, fix_num = F, clus_opt = 2, lower = -Inf, upper = Inf, mcmc = 50, burnin = 5) {
+#' @export
+SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.1, K = 10, min_gene = 300, num_mc = 3, fix_num = F, mcmc = 50, burnin = 2) {
   # EM algorithm
   # initiation
   G <- nrow(dat)
@@ -167,18 +197,6 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
   if (is.null(beta)) beta <- matrix(rnorm(G * K0), G, K0) / sqrt(K0) * sqrt(M0)
 
 
-  # # init clustering
-  # if(is.null(clus))
-  # {
-  #   s = svd(t(scale(t(dat))))
-  #   km0 <- kmeans(s$v[,1:K], M0, iter.max = 80, nstart = 300)
-  #   clus = km0$cluster
-  #   if(verbose) {
-  #     print(mclust::adjustedRandIndex(clus, celltype_true))
-  #     print(xtabs(~clus+celltype_true))
-  #   }
-  # }
-
   # inital impution only for low dropout genes
   n1 <- rowMeans(dat > cutoff)
   if (fix_num) {
@@ -195,12 +213,12 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
   if (is.null(clus)) {
     Y2_scale <- t(scale(t(dat[hq_ind, ])))
     s <- svd(Y2_scale)
-    if (clus_opt == 1) {
+    #if (clus_opt == 1) {
       km0 <- kmeans(t(Y2_scale) %*% s$u[, 1:K], M0, iter.max = 80, nstart = 300) # for high dropout rate
-    }
-    else {
-      km0 <- kmeans(s$v[, 1:K], M0, iter.max = 80, nstart = 300)
-    }
+    #}
+    # else {
+    #   km0 <- kmeans(s$v[, 1:K], M0, iter.max = 80, nstart = 300)
+    # }
     clus <- km0$cluster
     if (verbose & !is.null(celltype_true)) {
       print(mclust::adjustedRandIndex(clus, celltype_true))
@@ -209,10 +227,9 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
   }
   z <- matrix(0, n, M0)
   for (m in 1:M0) z[clus == m, m ] <- 1
-
-
+  
   if (is.null(clus)) {
-    res <- init_impute(dat[hq_ind, ], 1, rep(1, n), p_min, cutoff = cutoff, verbose = verbose) # ???[hq_ind, ]
+    res <- init_impute(dat[hq_ind, ], 1, rep(1, n), p_min, cutoff = cutoff, verbose = F) # ???[hq_ind, ]
     res[[2]] <- res[[2]] %*% t(rep(1, M0))
   } else {
     res <- init_impute(dat[hq_ind, ], M0, clus, p_min, cutoff = cutoff, verbose = F) # verbose
@@ -220,7 +237,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
 
 
   print("impute for hq genes")
-  impute_hq <- EM_impute(res[[1]], dat[hq_ind, ], res[[2]], M0, K0, cutoff, 20, beta[hq_ind, ], sigma[hq_ind, , drop = F], lambda, pi, z, mu = NULL, celltype = clus, penl, est_z, max_lambda, est_lam, impt_it, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc, lower = lower, upper = upper) # iter, M0=1?
+  impute_hq <- EM_impute(res[[1]], dat[hq_ind, ], res[[2]], M0, K0, cutoff, 20, beta[hq_ind, ], sigma[hq_ind, , drop = F], lambda, pi, z, mu = NULL, celltype = clus, penl, est_z, max_lambda, est_lam, impt_it, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc, lower = -Inf, upper = Inf) # iter, M0=1?
 
 
   pg[hq_ind, ] <- res[[2]]
@@ -325,10 +342,8 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     Y[ind, i] <- impt
   }
 
-
-
   print("impute for all genes")
-  impute_result <- EM_impute(Y, dat, pg, M0, K0, cutoff, iter, beta, sigma, impute_hq$lambda, impute_hq$pi, impute_hq$z, mu = NULL, celltype = clus, penl, est_z, max_lambda, est_lam, impt_it = 1, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc, lower = lower, upper = upper)
+  impute_result <- EM_impute(Y, dat, pg, M0, K0, cutoff, iter, beta, sigma, impute_hq$lambda, impute_hq$pi, impute_hq$z, mu = NULL, celltype = clus, penl, est_z, max_lambda, est_lam, impt_it = 1, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc, lower = -Inf, upper = Inf)
 
 
   impute <- matrix(0, n, G)
@@ -340,9 +355,11 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
 
   if(mcmc > 0)
   {
-   result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM, impute_result$geneSd, rep(1, n), mcmc= mcmc, burnin = burnin, pg = impute_result$pg, cutoff = cutoff)
+    result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM, impute_result$geneSd, clus, mcmc= mcmc, burnin = burnin, pg = impute_result$pg, cutoff = cutoff)
+
+    return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Yimp0" = impute, "pg" = pg, "initclus" = clus, "impt" = result2$impt, "impt_var" = result2$impt_var, "Ef" = result2$Ef, "Varf" = result2$Varf, "consensus_cluster" = result2$consensus_cluster))
   }
 
 
-  return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Ef" = impute_result$Ef, "Varf" = impute_result$Varf, "Yimp0" = impute, "Y" = impute_result$Y, "pg" = pg, "initclus" = clus))
+  return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Yimp0" = impute, "pg" = pg, "initclus" = clus, "impt" = impute_result$Y, "impt_var" = NULL, "Ef" = impute_result$Ef, "Varf" = impute_result$Varf, "consensus_cluster" = NULL))
 }
