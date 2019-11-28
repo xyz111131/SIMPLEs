@@ -37,9 +37,10 @@ do_impute(
 
 \item{pi}{Probabilites of cells belong to each cluster.}
 
-\item{pos_mean}{Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix.}
+\item{pos_mean}{Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix. Default is NULL.}
 
-\item{pos_sd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix.}
+\item{pos_sd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix.
+Default is NULL.}
 }
 \value{
 \code{do_impute} returns a list of imputation results in the following order.

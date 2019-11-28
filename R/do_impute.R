@@ -9,8 +9,9 @@
 #' @param sigma  Variances of idiosyncratic noises for each cluster.
 #' @param mu  Mean expression for each cluster
 #' @param pi  Probabilites of cells belong to each cluster.
-#' @param pos_mean  Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix.
+#' @param pos_mean  Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix. Default is NULL.
 #' @param pos_sd  Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix.
+#' Default is NULL.
 #'
 #' @return \code{do_impute} returns a list of imputation results in the following order.
 #' \enumerate{
@@ -24,7 +25,7 @@
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 #'
-do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_sd = NULL, celltype = NULL, mcmc = 10, burnin = 2, verbose = F, pg = 0.5, cutoff = 0.5) # dat: original data, Y: imputed data
+do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_sd = NULL, celltype = NULL, mcmc = 10, burnin = 2, verbose = F, pg = 0.5, cutoff = 0.5)
 {
   # initiation
   G <- nrow(Y)

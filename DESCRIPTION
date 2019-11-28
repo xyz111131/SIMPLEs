@@ -1,11 +1,14 @@
 Package: SIMPLEs
 Type: Package
-Title: What the Package Does (Title Case)
+Title: SIMPLEs: single-cell RNA sequencing imputation and cell clustering methods by modeling gene module variation
 Version: 0.1.0
 Author: Z. Hu
-Maintainer: Zhirui Hu <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Maintainer: Zhirui Hu <zhiruihu@g.harvard.edu>
+Description: SIMPLE is a R package that imputes "dropout" values (i.e. zero or small entries)
+   in the single cell RNASeq data based on cell similarities and gene correlations.
+   The imputed matrix can be used for dimension reduction and visualization of the
+   cell spectrum, to identify markers between different samples and construct gene
+   co-expression network.  
 License: MIT
 Encoding: UTF-8
 LazyData: true
@@ -16,4 +19,4 @@ Imports:
     mixtools (>= 1.1.0),
     Rsolnp (>= 1.16),
     msm (>= 1.6.7)
-RoxygenNote: 7.0.1
+RoxygenNote: 7.0.1.9000
