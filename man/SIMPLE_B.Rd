@@ -132,7 +132,7 @@ library(foreach) \cr
 library(doParallel) \cr
 library(SIMPLE) \cr
 \cr
-source("SIMPLE/utils.R") \cr
+source('SIMPLE/utils.R') \cr
 M0 = 3  # simulate number of clusters \cr
 n = 300 # number of cells \cr
 \cr
@@ -157,7 +157,7 @@ getCluster(result2$impt, celltype_true, Ks = 20, M0 = M0)[[1]] \cr
 
 }
 \seealso{
-SIMPLE
+[SIMPLE()]
 }
 \author{
 Zhirui Hu, \email{zhiruihu@g.harvard.edu}

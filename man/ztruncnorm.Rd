@@ -44,9 +44,8 @@ direct maximize the log-likelihood and return MLE of mean, variance and
 probability of mixture component.
 }
 \details{
-It will return mean -1, std 0.5 and p = p_max for the genes that the number
-of nonzero entries is less than 2 to indicate that the gene has no expression
-and will return NA if the optimization is not convergence or error
+It will return NA if number of nonzero is less than 4 indicating that the gene has no expression
+or if the optimization is not convergence or error
 which will be filled with sample mean and std, p_max afterwards.
 }
 \author{

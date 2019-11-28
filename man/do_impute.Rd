@@ -2,7 +2,7 @@
 % Please edit documentation in R/do_impute.R
 \name{do_impute}
 \alias{do_impute}
-\title{Sampling the imputed values and factors at given parameters.}
+\title{Sampling multiple copies of imputed values and cell factors at given parameters.}
 \usage{
 do_impute(
   dat,
@@ -25,21 +25,22 @@ do_impute(
 \arguments{
 \item{dat}{scRNASeq data matrix. Each row is a gene, each column is a cell.}
 
-\item{Y}{Initial imputed data. Can return from \emph{scimpclu_bulk}.}
+\item{Y}{Initial imputed data, output from \emph{SIMPLE_B} or \emph{SIMPLE}.}
 
-\item{beta}{Factor loadings.}
+\item{beta}{Factor loadings, output from \emph{SIMPLE_B} or \emph{SIMPLE}.}
 
-\item{lambda}{Variances of factors for each cluster.}
+\item{lambda}{Variances of factors for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.}
 
-\item{sigma}{Variances of idiosyncratic noises for each cluster.}
+\item{sigma}{Variances of idiosyncratic noises for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.}
 
-\item{mu}{Mean expression for each cluster}
+\item{mu}{Mean expression for each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.}
 
-\item{pi}{Probabilites of cells belong to each cluster.}
+\item{pi}{Probabilites of cells belong to each cluster, output from \emph{SIMPLE_B} or \emph{SIMPLE}.}
 
-\item{pos_mean}{Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix. Default is NULL.}
+\item{pos_mean}{Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix, output from \emph{SIMPLE_B} or \emph{SIMPLE}.
+Default is NULL.}
 
-\item{pos_sd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix.
+\item{pos_sd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix, output from \emph{SIMPLE_B} or \emph{SIMPLE}. Default is NULL.
 Default is NULL.}
 }
 \value{
@@ -47,9 +48,10 @@ Default is NULL.}
 \enumerate{
   \item{loglik}{The log-likelihood of the imputed gene expression at each iteration.}
   \item{impt}{A matrix contains the expectation of imputed expression.}
+ \item{impt_var}{A matrix contains the variance of each imputed entry.}
   \item{EF}{Posterior means of factors}
-  \item{varF0}{Posterior mean of the covariance between factors}
-  \item{varF}{Posterior variances of factors}
+  \item{varF}{Posterior covariance matrix of factors}
+ \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. }
 }
 }
 \description{
