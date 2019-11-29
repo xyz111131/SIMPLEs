@@ -166,27 +166,29 @@ Based on multiple imputed values, it will evaluate cluster stability for each ce
 It will also output the posterior mean and variance for the imputed values and cell factors.
 }
 \examples{
-library(foreach) \cr
-library(doParallel) \cr
-library(SIMPLE) \cr
-source('SIMPLE/utils/utils.R') \cr
+library(foreach) 
+library(doParallel) 
+library(SIMPLE) 
+source('SIMPLE/utils/utils.R')
 
-# simulate number of clusters \cr
-M0 = 3 \cr
-# number of cells \cr
-n = 300 \cr
-simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0) \cr
-Y2 = simu_data$Y2 \cr
-K0 = 6 # number of factors \cr
-registerDoParallel(cores = 6)  # parallel \cr
-# estimate the parameters and sample imputed values \cr
-result <- SIMPLE(Y2, K0, M0, clus = NULL, K = 20, p_min = 0.5, max_lambda=T, min_gene = 200,cutoff=0.01) \cr
-# sample imputed values \cr
-#' # evaluate cluster performance \cr
-celltype_true = simu_data$Z \cr
-mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true) \cr
-# or redo clustering based on imputed values (sometimes work better for real data) \cr
-getCluster(result$impt, celltype_true, Ks = 20, M0 = M0)[[1]] \cr
+# simulate number of clusters
+M0 = 3 
+# number of cells
+n = 300 
+simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0)
+Y2 = simu_data$Y2 
+# number of factors
+K0 = 6
+# parallel
+registerDoParallel(cores = 6)
+# estimate the parameters and sample imputed values 
+result <- SIMPLE(Y2, K0, M0, clus = NULL, K = 20, p_min = 0.5, max_lambda=T, min_gene = 200,cutoff=0.01)
+# sample imputed values 
+# evaluate cluster performance
+celltype_true = simu_data$Z 
+mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true)
+# or redo clustering based on imputed values (sometimes work better for real data)
+getCluster(result$impt, celltype_true, Ks = 20, M0 = M0)[[1]]
 
 }
 \seealso{
