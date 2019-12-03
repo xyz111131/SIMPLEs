@@ -1,4 +1,5 @@
 #' @import ggplot2
+#' @export
 simulation_bulk <- function(n = 300, S0 = 10, K = 3, MC = 2, block_size = 50, overlap = 15, 
     indepG = 30, dropr = 0.3, verbose = F) {
     B = NULL

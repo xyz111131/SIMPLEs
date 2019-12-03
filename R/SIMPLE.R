@@ -176,7 +176,6 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #' library(foreach) 
 #' library(doParallel) 
 #' library(SIMPLEs) 
-#' source('SIMPLE/utils/utils.R')
 #'
 #' # simulate number of clusters
 #' M0 = 3 
