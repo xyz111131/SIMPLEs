@@ -271,8 +271,8 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
       if (!is.null(celltype)) {
         print(mclust::adjustedRandIndex(clus, celltype))
       }
-      if (!is.null(celltype_true)) {
-        print(mclust::adjustedRandIndex(clus, celltype_true))
+      if (!is.null(celltype)) {
+        print(mclust::adjustedRandIndex(clus, celltype)) #_true
       }
     }
   }

@@ -244,10 +244,10 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     #   km0 <- kmeans(s$v[, 1:K], M0, iter.max = 80, nstart = 300)
     # }
     clus <- km0$cluster
-    if (verbose & !is.null(celltype_true)) {
-      print(mclust::adjustedRandIndex(clus, celltype_true))
-      print(xtabs(~ clus + celltype_true))
-    }
+    # if (verbose & !is.null(celltype_true)) {
+    #   print(mclust::adjustedRandIndex(clus, celltype_true))
+    #   print(xtabs(~ clus + celltype_true))
+    # }
   }
 
     z <- matrix(0, n, M0)
