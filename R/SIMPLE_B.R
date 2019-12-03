@@ -297,7 +297,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
   Vm <- lapply(1:M0, function(m) impute_hq$Varf[[m]] * nz[m])
 
   # inital beta for other genes
-  print("initial estimate beta fpr lq genes:")
+  print("initial estimate beta for lq genes:")
   
   lq_ind <- setdiff(1:G, hq_ind)
   # estimate beta and impute: only for positive part? (only impute for genes with more than 10% nonzero)
@@ -318,97 +318,92 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
       W_temp <- rbind(W_temp, cbind(Wmu, Wb))
     }
 
-    z <- matrix(0, n, M0)
-    for (m in 1:M0) z[clus == m, m] <- 1
-
-    print("initial estimate factors: ")
-    impute_hq <- EM_impute(res, dat[hq_ind, ], pg[hq_ind, , drop = F], M0, K0, cutoff, 30, beta[hq_ind, ], sigma[hq_ind, , drop = F], lambda, pi, z, mu = NULL,
-        celltype = celltype, penl, est_z, max_lambda, est_lam, impt_it, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc)  # iter = 30, mu = NULL
-
-
-    beta[hq_ind, ] <- impute_hq$beta
-    sigma[hq_ind, ] <- impute_hq$sigma
-    mu[hq_ind, ] <- impute_hq$mu  # check this, as imputed mu may not be zero
-    Y[hq_ind, ] <- impute_hq$Y
-    gene_mean[hq_ind] <- impute_hq$geneM
-    z <- impute_hq$z
-
-    penalty <- penl / (M0 * n + K0) / var(Y_aug) # sigma^2
-    fit1m <- glmnet(W_aug, Y_aug,
-      family = "gaussian", alpha = 1, intercept = F, standardize = F, nlambda = 1, lambda = penalty * K0 / (M0 + K0),
-      penalty.factor = c(rep(0, M0), rep(1, K0))
-    ) # K dimensional, n+K data
-
     ML <- cbind(matrix(0, K0, M0), chol(V))
 
+    W_aug <- rbind(W_temp, ML) #(n+K) * (M + K)
+    Y_aug <- c(Y_temp, rep(0,K0)) #G*(n+K)
+
+    penalty <- penl/(M0*n + K0)/var(Y_aug) # sigma^2
+    fit1m=glmnet(W_aug,Y_aug,family="gaussian",alpha=1, intercept=F, standardize = F, nlambda =1, lambda = penalty * K0/(M0 + K0),
+                 penalty.factor = c(rep(0, M0), rep(1, K0))) #K dimensional, n+K data
+
+    coeff = fit1m$beta[-1:-M0,1]
+    tempmu = fit1m$beta[1:M0,1]
+
+    sg = sapply(1:M0, function(m) {
+      (sum( (dat[g, ] - tempmu[m] - coeff%*% t(impute_hq$Ef[[m]]) )^2 *z[,m] ) + sum((coeff %*%Vm[[m]])* coeff))
+    })
+    c(fit1m$beta[,1], rep((sum(sg)+1)/(n + 3),M0))
+  }
+
+  mu[lq_ind, ] = matrix(res[, 1:M0], ncol=M0)
+  beta[lq_ind, ] = matrix(res[,(M0+1):(K0+M0)], ncol=K0)
+
+  sigma[lq_ind, ] = matrix(res[, -1:-(K0+M0)], ncol=M0)
+  sigma[sigma>9]=9
+  sigma[sigma<1e-4]=1e-4
 
 
-    # imputation set dropout rate as pg
-    if (M0 > 1) {
-      im <- apply(z, 1, function(x) which(rmultinom(1, 1, x) == 1)) # sample membership
-    } else {
-      im <- rep(1, n)
+
+   # imputation set dropout rate as pg
+  if(M0 > 1) {
+    im =  apply(z,1, function(x) which(rmultinom(1, 1, x)==1)) # sample membership
+  }else{
+    im = rep(1,n)
+  }
+  for(i in 1:n)
+  {
+    m = im[i]
+    
+    ind = which(dat[lq_ind,i] <=cutoff)
+    ind = lq_ind[ind]
+
+    ms = mu[ind,m] + beta[ind,, drop=F] %*% impute_hq$Ef[[m]][i,]
+    sds = sqrt(sigma[ind,m])
+    p = pg[ind, celltype[i]]  # need celltype
+
+    prob = pnorm(cutoff, mean = ms, sd = sds) # compute x<0 prob
+    prob_drop = (1-p) / (prob * p + (1-p))
+    I_drop = rbinom(length(ind), 1, prob_drop)
+
+
+    # imputation for dropout
+    impt = rep(0, length(ind))
+    impt[I_drop==1] = rnorm(sum(I_drop==1), ms[I_drop==1], sds[I_drop==1])
+
+    # imputation for non-dropout
+    if(sum(I_drop==0) >0) {
+      impt[I_drop==0] = rtnorm(sum(I_drop==0), upper = cutoff, mean = ms[I_drop==0], sd = sds[I_drop==0])
     }
-    for (i in 1:n)
-    {
-      m <- im[i]
 
-          coeff <- fit1m$beta[-1:-M0, 1]
-          tempmu <- fit1m$beta[1:M0, 1]
-
-          # sg = sum((Y_temp - fit1m$a0 - coeff %*% t(W_temp))^2) + sum(( coeff %*%V)* coeff)* ns c(fit1m$a0, coeff, (sg+1)/(ns + 3))
-
-          sg <- sapply(1:M0, function(m) {
-              (sum((dat[g, ] - tempmu[m] - coeff %*% t(impute_hq$Ef[[m]]))^2 * z[, m]) + sum((coeff %*% Vm[[m]]) * coeff))
-          })
-          c(fit1m$beta[, 1], rep((sum(sg) + 1)/(n + 3), M0))
-      }
-
-      mu[lq_ind, ] <- matrix(res[, 1:M0], ncol = M0)
-      beta[lq_ind, ] <- matrix(res[, (M0 + 1):(K0 + M0)], ncol = K0)
-
-      sigma[lq_ind, ] <- matrix(res[, -1:-(K0 + M0)], ncol = M0)
-      sigma[sigma > 9] <- 9
-      sigma[sigma < 1e-04] <- 1e-04
-
-
-    # imputation set dropout rate as pg
-    if (M0 > 1) {
-        im <- apply(z, 1, function(x) which(rmultinom(1, 1, x) == 1))  # sample membership
-    } else {
-        im <- rep(1, n)
-    }
-    for (i in 1:n) {
-        m <- im[i]
-        # vr = impute_hq$Varf[[m]] f_i = rmvnorm(1, impute_hq$Ef[[m]][i,], vr)
-
-        ind <- which(dat[lq_ind, i] <= cutoff)
-        ind <- lq_ind[ind]
-
-        ms <- mu[ind, m] + beta[ind, , drop = F] %*% impute_hq$Ef[[m]][i, ]
-        sds <- sqrt(sigma[ind, m])
-        p <- pg[ind, celltype[i]]  # need celltype
-
+    Y[ind, i] = impt
+  }
 
   impute <- matrix(0, n, G)
   ##if (iter > 0) {
    
     # EM for all genes
     print("impute for all genes")
-    impute_result <- EM_impute(Y, dat, pg, M0, K0, cutoff, iter, beta, sigma, impute_hq$lambda, impute_hq$pi, impute_hq$z, mu = NULL, celltype = celltype, penl, est_z, max_lambda, est_lam, impt_it = 1, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc)
+    impute_result <- EM_impute(Y, dat, pg, M0, K0, cutoff, iter, beta, sigma, impute_hq$lambda, impute_hq$pi, impute_hq$z, mu = NULL, celltype = celltype, 
+      penl, est_z, max_lambda, est_lam, impt_it = 1, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc)
 
     for (m in 1:M0)
     {
       impute <- impute + t(impute_result$mu[, m] + impute_result$beta %*% t(impute_result$Ef[[m]])) * impute_result$z[, m]
     }
 
+    impute <- t(impute) * impute_result$geneSd + impute_result$geneM
+
     if(mcmc > 0)
     {
-      result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM, impute_result$geneSd, clus, mcmc= mcmc, burnin = burnin, pg = impute_result$pg, cutoff = cutoff)
-      return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Yimp0" = impute, "pg" = pg, "impt" = result2$impt, "impt_var" = result2$impt_var, "Ef" = result2$Ef, "Varf" = result2$Varf, "consensus_cluster" = result2$consensus_cluster))
+      result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, 
+        impute_result$geneM, impute_result$geneSd, clus, mcmc= mcmc, burnin = burnin, pg = impute_result$pg, cutoff = cutoff)
+      return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, 
+        "z" = impute_result$z, "Yimp0" = impute, "pg" = pg, "impt" = result2$impt, "impt_var" = result2$impt_var, "Ef" = result2$Ef, "Varf" = result2$Varf, "consensus_cluster" = result2$consensus_cluster))
     }else{
       
-      return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Yimp0" = impute, "pg" = pg, "impt" = impute_result$Y, "impt_var" = NULL, "Ef" = impute_result$Ef, "Varf" = impute_result$Varf, "consensus_cluster" = NULL))
+      return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, 
+        "z" = impute_result$z, "Yimp0" = impute, "pg" = pg, "impt" = impute_result$Y, "impt_var" = NULL, "Ef" = impute_result$Ef, "Varf" = impute_result$Varf, "consensus_cluster" = NULL))
     }
   #} else {
    
