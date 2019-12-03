@@ -2,33 +2,31 @@
 % Please edit documentation in R/SIMPLE.R
 \name{init_impute}
 \alias{init_impute}
-\title{Initialize imputed matrix integrating bulk RNASeq}
+\title{Initialize imputation for each individual gene}
 \usage{
-init_impute(Y2, M0, clus, p_min = 0.6, cutoff = 0.5, verbose = F)
+init_impute(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F)
 }
 \arguments{
 \item{Y2}{scRNASeq data matrix. Each row is a gene, each column is a cell.}
 
-\item{clus}{A numeric vector for the cell type labels of cells in the scRNASeq. Each cell type has corresponding the mean expression in the bulk RNASeq data. The labels must start from 1 to the number of types. See details.}
+\item{M0}{number of cell types}
+
+\item{clus}{A numeric vector for the cell type labels of cells in the scRNASeq. The labels must start from 1 to the number of types (M0).}
+
+\item{p_min}{Restrict the max dropout rate to be 1-p_min. Default = 0.6.}
 
 \item{cutoff}{The value below cutoff is treated as no expression. Default = 0.1.}
 
 \item{verbose}{Whether to plot some intermediate result. Default = False.}
-
-\item{bulk}{Bulk RNASeq data matrix. Each row is a gene which must be ordered the same as the scRNASeq data. Each column is a cell type which must be ordered as the cell type label in \emph{clus}.}
-
-\item{pg1}{A data matrix for the dropout rate for each gene which is the ratio between mean expression in the scRNASeq and bulk RNASeq. Each row is a gene which must be ordered the same as the scRNASeq data. Each column is a cell type which must be ordered as the cell type label in \emph{clus}.}
 }
 \value{
-Imputed gene expression matrix
+Imputed gene expression matrix, treat each gene independently
 }
 \description{
-Initialize imputed matrix integrating bulk RNASeq
+Initialize imputation for each individual gene
 }
 \details{
-If the scRNASeq data does not have the cell type information, then all cells
-  can be treated as a single type and the input bulk RNASeq should also have
-  one column that is the mean expression over all cell types.
+Fit each gene expression by a zero-inflated censored Gaussian distribution and return a random sample of imputed values for initialization
 }
 \author{
 Zhirui Hu, \email{zhiruihu@g.harvard.edu}

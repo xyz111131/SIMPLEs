@@ -21,83 +21,84 @@
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 
 init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
-  impute0 <- Y2
-  G <- nrow(Y2)
-  pg <- pg1 # matrix(0,G, M0)
-  # ndropout = pg1
-  M0 <- max(clus)
-  for (i in 1:M0)
-  {
-    temp_dat <- as.matrix(Y2[, clus == i])
-    # p0 = rowMeans(temp_dat <= cutoff)
-    impute <- temp_dat
+    impute0 <- Y2
+    G <- nrow(Y2)
+    pg <- pg1  # matrix(0,G, M0)
+    # ndropout = pg1
+    M0 <- max(clus)
+    for (i in 1:M0) {
+        temp_dat <- as.matrix(Y2[, clus == i])
+        # p0 = rowMeans(temp_dat <= cutoff)
+        impute <- temp_dat
 
-    result <- ztruncnorm(temp_dat, cutoff = cutoff, p_min = 0.01, p_max = pg1[, i]) # pg1 >= 0.1
-    mu <- result[[1]][, 1]
-    sd <- result[[1]][, 2]
-    pg[, i] <- result[[2]]
-
-
-    ind <- which(is.na(mu))
-    if (verbose) print(paste(length(ind), "not fit TN"))
-    mu[ind] <- rowMeans(Y2[ind, clus == i, drop = F])
-    sd[ind] <- rowSds(Y2[ind, clus == i, drop = F])
-    pg[ind, i] <- pg1[ind, i] # 1
+        result <- ztruncnorm(temp_dat, cutoff = cutoff, p_min = 0.01, p_max = pg1[, i])  # pg1 >= 0.1
+        mu <- result[[1]][, 1]
+        sd <- result[[1]][, 2]
+        pg[, i] <- result[[2]]
 
 
-    if (verbose) {
-      par(mfrow = c(2, 2), pch = 16)
-      plot(bulk[, i], mu, col = rgb(1, 0, 0, 0.5), xlab = "bulk", ylab = "est_mu", main = paste("cluster", i))
-      a <- coef(lm(mu ~ bulk[, i], weights = bulk[, i]^2))
-      abline(a, col = 2)
+        ind <- which(is.na(mu))
+        if (verbose)
+            print(paste(length(ind), "not fit TN"))
+        mu[ind] <- rowMeans(Y2[ind, clus == i, drop = F])
+        sd[ind] <- rowSds(Y2[ind, clus == i, drop = F])
+        pg[ind, i] <- pg1[ind, i]  # 1
 
-      plot(bulk[, i], rowMeans(temp_dat), col = rgb(0, 1, 0, 0.5), xlab = "bulk", ylab = "raw_mean")
-      b <- coef(lm(rowMeans(temp_dat) ~ bulk[, i], weights = bulk[, i]^2))
-      abline(b, col = 2)
 
-      # dropout rate
-      plot(pg1[, i], pg[, i], col = rgb(0, 1, 1, 0.5), xlab = "amplified rate", ylab = "prob normal component")
+        if (verbose) {
+            par(mfrow = c(2, 2), pch = 16)
+            plot(bulk[, i], mu, col = rgb(1, 0, 0, 0.5), xlab = "bulk", ylab = "est_mu", main = paste("cluster", i))
+            a <- coef(lm(mu ~ bulk[, i], weights = bulk[, i]^2))
+            abline(a, col = 2)
+
+            plot(bulk[, i], rowMeans(temp_dat), col = rgb(0, 1, 0, 0.5), xlab = "bulk", ylab = "raw_mean")
+            b <- coef(lm(rowMeans(temp_dat) ~ bulk[, i], weights = bulk[, i]^2))
+            abline(b, col = 2)
+
+            # dropout rate
+            plot(pg1[, i], pg[, i], col = rgb(0, 1, 1, 0.5), xlab = "amplified rate", ylab = "prob normal component")
+        }
+
+
+        # imputation for each gene
+        for (j in 1:G) {
+            imp <- which(temp_dat[j, ] <= cutoff)
+            if (length(imp) == 0)
+                next
+            prob <- pnorm(cutoff, mean = mu[j], sd = sd[j])  # compute x<0 prob
+
+            # imputation for dropout from norm, zero comp, censored part
+            prob_drop <- (pg[j, i]/pg1[j, i] - pg[j, i])/(prob * pg[j, i] + (1 - pg[j, i]))  # q * d, pg1 = 1-d, p = (1-d)*q, q = pg/pg1
+            prob_zero <- (1 - pg[j, i]/pg1[j, i])/(prob * pg[j, i] + (1 - pg[j, i]))  # 1-q
+            prob_trunc <- prob * pg[j, i]/(prob * pg[j, i] + (1 - pg[j, i]))  # q(1-d)*prob
+
+            I_drop <- rmultinom(length(imp), 1, c(prob_drop, prob_zero, prob_trunc))
+
+            # imputation for dropout
+            impute[j, imp[I_drop[1, ] == 1]] <- rnorm(sum(I_drop[1, ] == 1), mu[j], sd[j])
+
+            # imputation for others
+            impute[j, imp[I_drop[2, ] == 1]] <- rnorm(sum(I_drop[2, ] == 1), -1, 0.5)
+
+            impute[j, imp[I_drop[3, ] == 1]] <- rtnorm(sum(I_drop[3, ] == 1), upper = cutoff, mean = mu[j], sd = sd[j])
+        }
+
+        # print(impute[j,imp])
+
+
+        impute0[, clus == i] <- impute
+
+        if (verbose) {
+            plot(bulk[, i], rowMeans(impute), col = rgb(0, 0, 1, 0.5), xlab = "bulk", ylab = "imputed mean")
+            abline(b, col = 2)
+        }
     }
 
-
-    # imputation for each gene
-    for (j in 1:G)
-    {
-      imp <- which(temp_dat[j, ] <= cutoff)
-      if (length(imp) == 0) next
-      prob <- pnorm(cutoff, mean = mu[j], sd = sd[j]) # compute x<0 prob
-
-      # imputation for dropout from norm, zero comp, censored part
-      prob_drop <- (pg[j, i] / pg1[j, i] - pg[j, i]) / (prob * pg[j, i] + (1 - pg[j, i])) # q * d, pg1 = 1-d, p = (1-d)*q, q = pg/pg1
-      prob_zero <- (1 - pg[j, i] / pg1[j, i]) / (prob * pg[j, i] + (1 - pg[j, i])) # 1-q
-      prob_trunc <- prob * pg[j, i] / (prob * pg[j, i] + (1 - pg[j, i])) # q(1-d)*prob
-
-      I_drop <- rmultinom(length(imp), 1, c(prob_drop, prob_zero, prob_trunc))
-
-      # imputation for dropout
-      impute[j, imp[I_drop[1, ] == 1]] <- rnorm(sum(I_drop[1, ] == 1), mu[j], sd[j])
-
-      # imputation for others
-      impute[j, imp[I_drop[2, ] == 1]] <- rnorm(sum(I_drop[2, ] == 1), -1, 0.5)
-
-      impute[j, imp[I_drop[3, ] == 1]] <- rtnorm(sum(I_drop[3, ] == 1), upper = cutoff, mean = mu[j], sd = sd[j])
-    }
-
-    # print(impute[j,imp])
-
-
-    impute0[, clus == i] <- impute
-
-    if (verbose) {
-      plot(bulk[, i], rowMeans(impute), col = rgb(0, 0, 1, 0.5), xlab = "bulk", ylab = "imputed mean")
-      abline(b, col = 2)
-    }
-  }
-
-  impute0[is.na(impute0)] <- 0
+    impute0[is.na(impute0)] <- 0
 
 
   return(impute0) 
+
 }
 
 #' Impute zero entries and clustering for scRNASeq data integrating bulk RNASeq
@@ -176,13 +177,12 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #'  \item{varF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
 #'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 #' }
-#' @seealso SIMPLE
+#' @seealso [SIMPLE()]
 #' @examples
 #' library(foreach) \cr
 #' library(doParallel) \cr
 #' library(SIMPLE) \cr
 #' \cr
-#' source("SIMPLE/utils/utils.R") \cr
 #' M0 = 3  # simulate number of clusters \cr
 #' n = 300 # number of cells \cr
 #' \cr
@@ -205,7 +205,10 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 #' @export
-SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20, iter = 10, est_z = 1, impt_it = 5, max_lambda = F, est_lam = 1, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, lambda = NULL, sigma = NULL, mu = NULL, p_min = 0.8, min_gene = 300, cutoff = 0.1, verbose = F, num_mc = 3, fix_num = F, mcmc = 50, burnin = 2) # iter: EM step for all genes
+
+SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20, iter = 10, est_z = 1, impt_it = 5, max_lambda = F, est_lam = 1, penl = 1, 
+  sigma0 = 100, pi_alpha = 1, beta = NULL, lambda = NULL, sigma = NULL, mu = NULL, p_min = 0.8, min_gene = 300, cutoff = 0.1, verbose = F, num_mc = 3, fix_num = F, 
+  mcmc = 50, burnin = 2) # iter: EM step for all genes
 {
   # EM algorithm
   # initiation
@@ -278,7 +281,8 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
   for (m in 1:M0) z[clus == m, m ] <- 1
 
   print("initial estimate factors: ")
-  impute_hq <- EM_impute(res, dat[hq_ind, ], pg[hq_ind, , drop = F], M0, K0, cutoff, 30, beta[hq_ind, ], sigma[hq_ind, , drop = F], lambda, pi, z, mu = NULL, celltype = celltype, penl, est_z, max_lambda, est_lam, impt_it, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc) # iter = 30, mu = NULL
+  impute_hq <- EM_impute(res, dat[hq_ind, ], pg[hq_ind, , drop = F], M0, K0, cutoff, 30, beta[hq_ind, ], sigma[hq_ind, , drop = F], lambda, pi, z, mu = NULL, 
+      celltype = celltype, penl, est_z, max_lambda, est_lam, impt_it, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc) # iter = 30, mu = NULL
 
 
   beta[hq_ind, ] <- impute_hq$beta
@@ -314,11 +318,20 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
       W_temp <- rbind(W_temp, cbind(Wmu, Wb))
     }
 
-    ML <- cbind(matrix(0, K0, M0), chol(V))
+    z <- matrix(0, n, M0)
+    for (m in 1:M0) z[clus == m, m] <- 1
 
-    W_aug <- rbind(W_temp, ML) # (n+K) * (M + K)
-    Y_aug <- c(Y_temp, rep(0, K0)) # G*(n+K)
+    print("initial estimate factors: ")
+    impute_hq <- EM_impute(res, dat[hq_ind, ], pg[hq_ind, , drop = F], M0, K0, cutoff, 30, beta[hq_ind, ], sigma[hq_ind, , drop = F], lambda, pi, z, mu = NULL,
+        celltype = celltype, penl, est_z, max_lambda, est_lam, impt_it, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc)  # iter = 30, mu = NULL
 
+
+    beta[hq_ind, ] <- impute_hq$beta
+    sigma[hq_ind, ] <- impute_hq$sigma
+    mu[hq_ind, ] <- impute_hq$mu  # check this, as imputed mu may not be zero
+    Y[hq_ind, ] <- impute_hq$Y
+    gene_mean[hq_ind] <- impute_hq$geneM
+    z <- impute_hq$z
 
     penalty <- penl / (M0 * n + K0) / var(Y_aug) # sigma^2
     fit1m <- glmnet(W_aug, Y_aug,
@@ -326,57 +339,55 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
       penalty.factor = c(rep(0, M0), rep(1, K0))
     ) # K dimensional, n+K data
 
-    coeff <- fit1m$beta[-1:-M0, 1]
-    tempmu <- fit1m$beta[1:M0, 1]
+    ML <- cbind(matrix(0, K0, M0), chol(V))
 
 
-    sg <- sapply(1:M0, function(m) {
-      (sum((dat[g, ] - tempmu[m] - coeff %*% t(impute_hq$Ef[[m]]))^2 * z[, m]) + sum((coeff %*% Vm[[m]]) * coeff))
-    })
-    c(fit1m$beta[, 1], rep((sum(sg) + 1) / (n + 3), M0))
-  }
 
-  mu[lq_ind, ] <- matrix(res[, 1:M0], ncol = M0)
-  beta[lq_ind, ] <- matrix(res[, (M0 + 1):(K0 + M0)], ncol = K0)
-
-  sigma[lq_ind, ] <- matrix(res[, -1:-(K0 + M0)], ncol = M0)
-  sigma[sigma > 9] <- 9
-  sigma[sigma < 1e-4] <- 1e-4
-
-
-  # imputation set dropout rate as pg
-  if (M0 > 1) {
-    im <- apply(z, 1, function(x) which(rmultinom(1, 1, x) == 1)) # sample membership
-  } else {
-    im <- rep(1, n)
-  }
-  for (i in 1:n)
-  {
-    m <- im[i]
-
-    ind <- which(dat[lq_ind, i] <= cutoff)
-    ind <- lq_ind[ind]
-
-    ms <- mu[ind, m] + beta[ind, , drop = F] %*% impute_hq$Ef[[m]][i, ]
-    sds <- sqrt(sigma[ind, m])
-    p <- pg[ind, celltype[i]] # need celltype
-
-    prob <- pnorm(cutoff, mean = ms, sd = sds) # compute x<0 prob
-    prob_drop <- (1 - p) / (prob * p + (1 - p))
-    I_drop <- rbinom(length(ind), 1, prob_drop)
-
-
-    # imputation for dropout
-    impt <- rep(0, length(ind))
-    impt[I_drop == 1] <- rnorm(sum(I_drop == 1), ms[I_drop == 1], sds[I_drop == 1])
-
-    # imputation for non-dropout
-    if (sum(I_drop == 0) > 0) {
-      impt[I_drop == 0] <- rtnorm(sum(I_drop == 0), upper = cutoff, mean = ms[I_drop == 0], sd = sds[I_drop == 0])
+    # imputation set dropout rate as pg
+    if (M0 > 1) {
+      im <- apply(z, 1, function(x) which(rmultinom(1, 1, x) == 1)) # sample membership
+    } else {
+      im <- rep(1, n)
     }
+    for (i in 1:n)
+    {
+      m <- im[i]
 
-    Y[ind, i] <- impt
-  }
+          coeff <- fit1m$beta[-1:-M0, 1]
+          tempmu <- fit1m$beta[1:M0, 1]
+
+          # sg = sum((Y_temp - fit1m$a0 - coeff %*% t(W_temp))^2) + sum(( coeff %*%V)* coeff)* ns c(fit1m$a0, coeff, (sg+1)/(ns + 3))
+
+          sg <- sapply(1:M0, function(m) {
+              (sum((dat[g, ] - tempmu[m] - coeff %*% t(impute_hq$Ef[[m]]))^2 * z[, m]) + sum((coeff %*% Vm[[m]]) * coeff))
+          })
+          c(fit1m$beta[, 1], rep((sum(sg) + 1)/(n + 3), M0))
+      }
+
+      mu[lq_ind, ] <- matrix(res[, 1:M0], ncol = M0)
+      beta[lq_ind, ] <- matrix(res[, (M0 + 1):(K0 + M0)], ncol = K0)
+
+      sigma[lq_ind, ] <- matrix(res[, -1:-(K0 + M0)], ncol = M0)
+      sigma[sigma > 9] <- 9
+      sigma[sigma < 1e-04] <- 1e-04
+
+
+    # imputation set dropout rate as pg
+    if (M0 > 1) {
+        im <- apply(z, 1, function(x) which(rmultinom(1, 1, x) == 1))  # sample membership
+    } else {
+        im <- rep(1, n)
+    }
+    for (i in 1:n) {
+        m <- im[i]
+        # vr = impute_hq$Varf[[m]] f_i = rmvnorm(1, impute_hq$Ef[[m]][i,], vr)
+
+        ind <- which(dat[lq_ind, i] <= cutoff)
+        ind <- lq_ind[ind]
+
+        ms <- mu[ind, m] + beta[ind, , drop = F] %*% impute_hq$Ef[[m]][i, ]
+        sds <- sqrt(sigma[ind, m])
+        p <- pg[ind, celltype[i]]  # need celltype
 
 
   impute <- matrix(0, n, G)
@@ -391,14 +402,10 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
       impute <- impute + t(impute_result$mu[, m] + impute_result$beta %*% t(impute_result$Ef[[m]])) * impute_result$z[, m]
     }
 
-    impute <- t(impute) * impute_result$geneSd + impute_result$geneM
-
     if(mcmc > 0)
     {
       result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM, impute_result$geneSd, clus, mcmc= mcmc, burnin = burnin, pg = impute_result$pg, cutoff = cutoff)
-
       return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Yimp0" = impute, "pg" = pg, "impt" = result2$impt, "impt_var" = result2$impt_var, "Ef" = result2$Ef, "Varf" = result2$Varf, "consensus_cluster" = result2$consensus_cluster))
-
     }else{
       
       return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, "z" = impute_result$z, "Yimp0" = impute, "pg" = pg, "impt" = impute_result$Y, "impt_var" = NULL, "Ef" = impute_result$Ef, "Varf" = impute_result$Varf, "consensus_cluster" = NULL))
