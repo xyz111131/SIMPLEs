@@ -175,7 +175,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #' @examples
 #' library(foreach) 
 #' library(doParallel) 
-#' library(SIMPLE) 
+#' library(SIMPLEs) 
 #' source('SIMPLE/utils/utils.R')
 #'
 #' # simulate number of clusters
@@ -200,7 +200,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 #' @export
-<<<<<<< HEAD
+
 SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, 
     sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.1, K = 20, min_gene = 300, num_mc = 3, fix_num = F, mcmc = 50, burnin = 2) {
   # EM algorithm
@@ -249,24 +249,12 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
       print(mclust::adjustedRandIndex(clus, celltype_true))
       print(xtabs(~ clus + celltype_true))
     }
+  }
 
-    print(paste("inital impution for ", length(hq_ind), "high quality genes"))  # low dropout
-
-    # init clustering
-    if (is.null(clus)) {
-        Y2_scale <- t(scale(t(dat[hq_ind, ])))
-        s <- svd(Y2_scale)
-        # if (clus_opt == 1) {
-        km0 <- kmeans(t(Y2_scale) %*% s$u[, 1:K], M0, iter.max = 80, nstart = 300)  # for high dropout rate
-        # } else { km0 <- kmeans(s$v[, 1:K], M0, iter.max = 80, nstart = 300) }
-        clus <- km0$cluster
-        if (verbose & !is.null(celltype_true)) {
-            print(mclust::adjustedRandIndex(clus, celltype_true))
-            print(xtabs(~clus + celltype_true))
-        }
-    }
     z <- matrix(0, n, M0)
     for (m in 1:M0) z[clus == m, m] <- 1
+
+
     if (is.null(clus)) {
         res <- init_impute(dat[hq_ind, ], 1, rep(1, n), p_min, cutoff = cutoff, verbose = F)  # ???[hq_ind, ]
         res[[2]] <- res[[2]] %*% t(rep(1, M0))
@@ -348,8 +336,6 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     }
     for (i in 1:n) {
         m <- im[i]
-        # vr = impute_hq$Varf[[m]] f_i = rmvnorm(1, impute_hq$Ef[[m]][i,], vr)
-
         ind <- which(dat[lq_ind, i] <= cutoff)
         ind <- lq_ind[ind]
 
@@ -386,6 +372,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     if (mcmc > 0) {
         result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM,
             impute_result$geneSd, clus, mcmc = mcmc, burnin = burnin, pg = impute_result$pg, cutoff = cutoff)
+        
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda,
             z = impute_result$z, Yimp0 = impute, pg = pg, initclus = clus, impt = result2$impt, impt_var = result2$impt_var, Ef = result2$Ef, Varf = result2$Varf,
             consensus_cluster = result2$consensus_cluster))
