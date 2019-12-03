@@ -108,8 +108,8 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #' @param M0 Number of clusters. See details.
 #' @param clus Initial clustering of scRNASeq data. If NULL, the function will use PCA and Kmeans to do clustering initially. 
 #' @param K The number of PCs used in the initial clustering. Default = 20.
-#' @param iter Number of EM iterations for full data set. See details.
-#' @param est_z The iteration starts to update z.
+#' @param iter The number of EM iterations using full data set. See details.
+#' @param est_z The iteration starts to update Z.
 #' @param impt_it The iteration starts to sample new imputed values in initial phase. See details.
 #' @param max_lambda Whether to maximize over lambda.
 #' @param est_lam The iteration starts to estimate lambda.
@@ -177,7 +177,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 #' @export
-SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.1, K = 10, min_gene = 300, num_mc = 3, fix_num = F, mcmc = 50, burnin = 2) {
+SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.1, K = 20, min_gene = 300, num_mc = 3, fix_num = F, mcmc = 50, burnin = 2) {
   # EM algorithm
   # initiation
   G <- nrow(dat)
