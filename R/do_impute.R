@@ -29,6 +29,7 @@
 #'
 do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_sd = NULL, celltype = NULL, mcmc = 10, burnin = 2, verbose = F, pg = 0.5,
     cutoff = 0.5) {
+    PI = 3.14159265359
     # initiation
     G <- nrow(Y)
     n <- ncol(Y)

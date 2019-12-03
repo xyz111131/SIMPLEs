@@ -74,6 +74,9 @@
 # if est_z = 1, not use initial values of z
 EM_impute <- function(Y, Y0, pg, M0, K0, cutoff, iter, beta, sigma, lambda, pi, z, mu = NULL, celltype = NULL, penl = 1, est_z = 2, max_lambda = T, est_lam = 2,
     impt_it = 5, sigma0 = 100, pi_alpha = 1, verbose = F, num_mc = 3, lower = -Inf, upper = Inf) {
+
+    PI = 3.14159265359
+    
     Y[Y > upper] <- upper
     Y[Y < lower] <- lower
 
