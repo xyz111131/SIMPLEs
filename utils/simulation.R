@@ -3,13 +3,15 @@ library(scImpute)
 library(Rmagic)
 library(foreach)
 library(doParallel)
-library(SIMPLE)
+library(SIMPLEs)
 library(msm)
 library(ggplot2)
 library(reshape2)
 library(matrixStats)
 
-source("SIMPLE/utils.R")
+# make sure current work directory
+# TODO: use here
+source("./utils.R")
 
 args = commandArgs(trailingOnly = TRUE)
 
@@ -60,7 +62,7 @@ for (r in 1:run) {
     
     #### SIMPLE ####
     registerDoParallel(cores = 6)
-    result <- scimpclu(Y2, K0, M0, clus = NULL, K = 20, iter = 10, est_z = 1, impt_it = 1, 
+    result <- SIMPLE(Y2, K0, M0, clus = NULL, K = 20, iter = 10, est_z = 1, impt_it = 1, 
         max_lambda = T, est_lam = 1, penl = 1, sigma0 = 100, p_min = pm, cutoff = 0.01, 
         verbose = T, min_gene = 200)  #0.4
     resultY = result$Y
@@ -78,7 +80,7 @@ for (r in 1:run) {
     mse[r, 3] = mean((result1$impt[Y2 == 0] - Y[Y2 == 0])^2)
     
     #### using bulk ####
-    result <- scimpclu_bulk(Y2, K0, data.frame(simu_data$bulk), M0, celltype = rep(1, 
+    result <- SIMPLE_B(Y2, K0, data.frame(simu_data$bulk), M0, celltype = rep(1, 
         n), clus = NULL, K = 20, iter = 10, est_z = 1, impt_it = 1, max_lambda = T, 
         est_lam = 2, penl = 1, sigma0 = 100, p_min = pm, min_gene = 200, cutoff = 0.01, 
         verbose = T)
