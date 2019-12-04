@@ -231,7 +231,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     if (length(hq_ind) < min_gene) hq_ind <- order(n1, decreasing = T)[1:min_gene] # fix number of hq genes for simulation, need to change back
   }
 
-  print(paste("inital impution for ", length(hq_ind), "high quality genes")) # low dropout
+  message(paste("inital impution for ", length(hq_ind), "high quality genes")) # low dropout
 
   # init clustering
   if (is.null(clus)) {
@@ -262,7 +262,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     }
 
 
-    print("impute for hq genes")
+    message("impute for hq genes")
     # iter, M0=1?
     impute_hq <- EM_impute(res[[1]], dat[hq_ind, ], res[[2]], M0, K0, cutoff, 20, beta[hq_ind, ], sigma[hq_ind, , drop = F], lambda, pi, z, mu = NULL, celltype = clus,
         penl, est_z, max_lambda, est_lam, impt_it, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc, lower = -Inf, upper = Inf)
@@ -279,7 +279,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     Vm <- lapply(1:M0, function(m) impute_hq$Varf[[m]] * nz[m])
 
     # inital beta for other genes
-    print("initial estimate beta for lq genes:")
+    message("initial estimate beta for lq genes:")
     lq_ind <- setdiff(1:G, hq_ind)  # which(n1 < p_min )
     # estimate beta and impute: only for positive part? (only impute for genes with more than 10% nonzero)
 
@@ -359,7 +359,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
         Y[ind, i] <- impt
     }
 
-    print("EM for all genes")
+    message("EM for all genes")
     impute_result <- EM_impute(Y, dat, pg, M0, K0, cutoff, iter, beta, sigma, impute_hq$lambda, impute_hq$pi, impute_hq$z, mu = NULL, celltype = clus, penl,
         est_z, max_lambda, est_lam, impt_it = 1, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc, lower = -Inf, upper = Inf)
 
@@ -369,7 +369,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     }
     impute <- t(impute) * impute_result$geneSd + impute_result$geneM
     if (mcmc > 0) {
-        print("multiple impution sampling")
+        message("multiple impution sampling")
         result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM,
             impute_result$geneSd, clus, mcmc = mcmc, burnin = burnin, pg = pg, cutoff = cutoff, verbose = verbose)
         

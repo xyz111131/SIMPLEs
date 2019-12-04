@@ -249,7 +249,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
   pg[pg > 1] <- 1
   pg[pg < 0.1] <- 0.1
 
-  print(paste("initial impution for hq genes: ", length(hq_ind))) # low dropout
+  message(paste("initial impution for hq genes: ", length(hq_ind))) # low dropout
 
   res <- init_impute_bulk(dat[hq_ind, ], celltype, bulk[hq_ind, , drop = F ], pg[hq_ind, , drop = F], cutoff = cutoff, verbose = F) # verbose
 
@@ -280,7 +280,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
   z <- matrix(0, n, M0)
   for (m in 1:M0) z[clus == m, m ] <- 1
 
-  print("initial estimate factors: ")
+  message("initial estimate factors: ")
   impute_hq <- EM_impute(res, dat[hq_ind, ], pg[hq_ind, , drop = F], M0, K0, cutoff, 30, beta[hq_ind, ], sigma[hq_ind, , drop = F], lambda, pi, z, mu = NULL, 
       celltype = celltype, penl, est_z, max_lambda, est_lam, impt_it, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc) # iter = 30, mu = NULL
 
@@ -297,7 +297,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
   Vm <- lapply(1:M0, function(m) impute_hq$Varf[[m]] * nz[m])
 
   # inital beta for other genes
-  print("initial estimate beta for lq genes:")
+  message("initial estimate beta for lq genes:")
   
   lq_ind <- setdiff(1:G, hq_ind)
   # estimate beta and impute: only for positive part? (only impute for genes with more than 10% nonzero)
@@ -383,7 +383,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
   ##if (iter > 0) {
    
     # EM for all genes
-    print("impute for all genes")
+    message("impute for all genes")
     impute_result <- EM_impute(Y, dat, pg, M0, K0, cutoff, iter, beta, sigma, impute_hq$lambda, impute_hq$pi, impute_hq$z, mu = NULL, celltype = celltype, 
       penl, est_z, max_lambda, est_lam, impt_it = 1, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc)
 
@@ -396,7 +396,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
 
     if(mcmc > 0)
     {
-      print("multiple impution sampling")
+      message("multiple impution sampling")
       result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, 
         impute_result$geneM, impute_result$geneSd, clus, mcmc= mcmc, burnin = burnin, pg = pg, cutoff = cutoff)
       return(list("loglik" = impute_result$loglik, "pi" = impute_result$pi, "mu" = impute_result$mu, "sigma" = impute_result$sigma, "beta" = impute_result$beta, "lambda" = impute_result$lambda, 
