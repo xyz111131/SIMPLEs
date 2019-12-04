@@ -2,6 +2,7 @@
 
 export(SIMPLE)
 export(SIMPLE_B)
+export(do_impute)
 export(simulation_bulk)
 import(MASS)
 import(Rsolnp)

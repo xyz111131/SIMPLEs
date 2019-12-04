@@ -24,7 +24,7 @@ SIMPLE(
   clus = NULL,
   p_min = 0.8,
   cutoff = 0.1,
-  K = 10,
+  K = 20,
   min_gene = 300,
   num_mc = 3,
   fix_num = F,
@@ -39,12 +39,11 @@ SIMPLE(
 
 \item{M0}{Number of clusters. See details.}
 
-\item{iter}{Number of EM iterations for full data set. See details.}
+\item{iter}{The number of EM iterations using full data set. See details.}
 
 \item{est_lam}{The iteration starts to estimate lambda.}
 
-\item{impt_it}{The iteration starts to sample new imputed values in initial
-phase. See details.}
+\item{impt_it}{The iteration starts to sample new imputed values in initial phase. See details.}
 
 \item{penl}{L1 penalty for the factor loadings.}
 
@@ -74,7 +73,7 @@ each cluster. Each column is for a cell cluster. If NULL, it will take the
 sample mean of cells weighted by the probability in each cluster. See
 details.}
 
-\item{est_z}{The iteration starts to update z.}
+\item{est_z}{The iteration starts to update Z.}
 
 \item{clus}{Initial clustering of scRNASeq data. If NULL, the function will
 use PCA and Kmeans to do clustering initially.}
@@ -168,8 +167,7 @@ It will also output the posterior mean and variance for the imputed values and c
 \examples{
 library(foreach) 
 library(doParallel) 
-library(SIMPLE) 
-source('SIMPLE/utils/utils.R')
+library(SIMPLEs) 
 
 # simulate number of clusters
 M0 = 3 
@@ -192,7 +190,7 @@ getCluster(result$impt, celltype_true, Ks = 20, M0 = M0)[[1]]
 
 }
 \seealso{
-[SIMPLE_B()]
+\code{\link{SIMPLE_B}}
 }
 \author{
 Zhirui Hu, \email{zhiruihu@g.harvard.edu}

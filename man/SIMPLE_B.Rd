@@ -30,7 +30,8 @@ SIMPLE_B(
   verbose = F,
   num_mc = 3,
   fix_num = F,
-  clus_opt = 2
+  mcmc = 50,
+  burnin = 2
 )
 }
 \arguments{
@@ -48,9 +49,9 @@ SIMPLE_B(
 
 \item{K}{The number of PCs used in the initial clustering. Default = 20.}
 
-\item{iter}{Number of EM iterations for full data set. See details.}
+\item{iter}{The number of EM iterations using full data set. See details.}
 
-\item{est_z}{The iteration starts to update z.}
+\item{est_z}{The iteration starts to update Z.}
 
 \item{impt_it}{The iteration starts to sample new imputed values in initial phase. See details.}
 
@@ -80,7 +81,13 @@ SIMPLE_B(
 
 \item{verbose}{Whether to show some intermediate results. Default = False.}
 
-\item{num_mc}{The number of Gibbs steps to generate new imputed data.}
+\item{num_mc}{The number of Gibbs steps for generating imputed data when the parameters are updated during Monte Carlo EM. Default = 3.}
+
+\item{fix_num}{If true, always use top \emph{min_gene} genes with higest proportion of non zeros in the initial phase. Default  = F. See details.}
+
+\item{mcmc}{The number of Gibbs steps to sample imputed data after EM. Default = 50.}
+
+\item{burnin}{The number of burnin steps before sample imputed data after EM. Default = 2.}
 }
 \value{
 \code{SIMPLE_B} returns a list of results in the following order.
@@ -95,10 +102,12 @@ SIMPLE_B(
 \item{Ef}{Conditonal expection the factors for each cluster \eqn{E(f_i|z_i = m)}. A list with length M0, each element in the list is a n by K0 matrix.}
 \item{Varf}{Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}. A list with length M0, each element in the list is a K0 by K0 matrix.}
 \item{Yimp0}{A matrix contains the expectation of imputed expression.}
-\item{Y}{Last sample of imputed matrix.}
 \item{pg}{A G by M0 matrix, dropout rate for each gene in each cluster.}
-\item{geneM}{Gene mean. If centerized each gene before estimating the parameters, provide the overall mean of gene expression removed from the data matrix. }
-\item{geneSd}{Gene standard deviation. If scaled each gene before estimating the parameters, provide the overall standard deviation of gene expression removed from the data matrix. }
+ \item{impt}{A matrix contains the mean of each imputed entry by sampling multiple imputed values at MLE. If mcmc <= 0, output imputed expressoin matrix at last step of EM}
+ \item{impt_var}{A matrix contains the variance of each imputed entry by sampling multiple imputed values at MLE. NULL if mcmc <= 0.}
+ \item{EF}{Posterior means of factors given observed data. If mcmc <= 0, output conditional mean for each cluster given the imputed data at the last step of EM. }
+ \item{varF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
+ \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 }
 }
 \description{
@@ -119,20 +128,22 @@ We assume that the cells come from M0 clusters. Within each cell cluster, the
   matrix whose diagonal entries are specified by \emph{sigma}, and
   \eqn{\Lambda_m} is a K0 by K0 diagonal matrix whose diagonal entries are
   specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where
-  \eqn{\pi~Dir(\alpha)}. The algorithm first runs Monte Carlo EM using only
+  \eqn{\pi~Dir(\alpha)}. 
+  
+  The algorithm first runs Monte Carlo EM using only
   the genes with low dropout rate (initial phase) and initializes factor
   loadings and clustering membership. Then it runs another rounds of Monte
-  Carlo EM using all the genes. In the initial phase, we used the genes with
-  dropout rate less than \emph{1 - p_min}; if the number of genes is less
-  than \emph{min_gene}, we ranked the genes by the number cells with nonzero
-  expression and kept the top \emph{min_gene} genes.
+  Carlo EM using all the genes. In the initial phase, we use the genes with dropout rate less than
+\emph{1 - p_min}; if the number of genes is less than \emph{min_gene}, we
+rank the genes by the number cells with nonzero expression and keep the top
+\emph{min_gene} genes. If \emph{fix_num} is true, then we always keep the top 
+\emph{min_gene} genes in the initial phase.
 }
 \examples{
 library(foreach) \cr
 library(doParallel) \cr
 library(SIMPLE) \cr
 \cr
-source('SIMPLE/utils.R') \cr
 M0 = 3  # simulate number of clusters \cr
 n = 300 # number of cells \cr
 \cr
@@ -143,21 +154,18 @@ K0 = 6 # number of factors \cr
 \cr
 registerDoParallel(cores = 6)  # parallel \cr
 \cr
-# estimate the parameters \cr
-result <- scimpclu_bulk(Y2, K0, data.frame(simu_data$bulk), M0, celltype=rep(1, n), clus = NULL, K = 20, p_min = 0.5, min_gene = 200,cutoff=0.01, max_lambda=T) \cr
-\cr
-# sample imputed values \cr
-result2 = do_impute(Y2, result$Y, result$beta, result$lambda, result$sigma, result$mu, result$pi, result$geneM, result$geneSd, rep(1, n), mcmc=50, burnin = 5, pg = result$pg, cutoff = 0.01) \cr
+# estimate the parameters, only input the overall mean of all cell types from bulk \cr
+result <- SIMPLE_B(Y2, K0, data.frame(simu_data$bulk), M0, celltype=rep(1, n), clus = NULL, K = 20, p_min = 0.5, min_gene = 200,cutoff=0.01, max_lambda=T) \cr
 \cr
 # evaluate cluster performance \cr
 celltype_true = simu_data$Z \cr
 mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true) \cr
 # or redo clustering based on imputed values (sometimes work better for real data) \cr
-getCluster(result2$impt, celltype_true, Ks = 20, M0 = M0)[[1]] \cr
+getCluster(result$impt, celltype_true, Ks = 20, M0 = M0)[[1]] \cr
 
 }
 \seealso{
-[SIMPLE()]
+\code{\link{SIMPLE}}
 }
 \author{
 Zhirui Hu, \email{zhiruihu@g.harvard.edu}
