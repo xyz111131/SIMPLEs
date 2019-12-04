@@ -177,7 +177,7 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #'  \item{varF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
 #'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 #' }
-#' @seealso [SIMPLE()]
+#' @seealso \code{\link{SIMPLE}}
 #' @examples
 #' library(foreach) \cr
 #' library(doParallel) \cr
