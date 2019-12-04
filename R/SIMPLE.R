@@ -359,7 +359,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
         Y[ind, i] <- impt
     }
 
-    print("EF for all genes")
+    print("EM for all genes")
     impute_result <- EM_impute(Y, dat, pg, M0, K0, cutoff, iter, beta, sigma, impute_hq$lambda, impute_hq$pi, impute_hq$z, mu = NULL, celltype = clus, penl,
         est_z, max_lambda, est_lam, impt_it = 1, sigma0, pi_alpha, verbose = verbose, num_mc = num_mc, lower = -Inf, upper = Inf)
 
@@ -371,7 +371,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
     if (mcmc > 0) {
         print("multiple impution sampling")
         result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM,
-            impute_result$geneSd, clus, mcmc = mcmc, burnin = burnin, pg = impute_result$pg, cutoff = cutoff, verbose = verbose)
+            impute_result$geneSd, clus, mcmc = mcmc, burnin = burnin, pg = pg, cutoff = cutoff, verbose = verbose)
         
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda,
             z = impute_result$z, Yimp0 = impute, pg = pg, initclus = clus, impt = result2$impt, impt_var = result2$impt_var, Ef = result2$Ef, Varf = result2$Varf,
@@ -381,3 +381,4 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
         z = impute_result$z, Yimp0 = impute, pg = pg, initclus = clus, impt = impute_result$Y, impt_var = NULL, Ef = impute_result$Ef, Varf = impute_result$Varf,
         consensus_cluster = NULL))
 }
+
