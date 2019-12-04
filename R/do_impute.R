@@ -117,7 +117,6 @@ do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_
             ms <- (mu[ind, m] + beta[ind, ] %*% t(f_i)) * pos_sd[ind] + pos_mean[ind]
             sds <- sqrt(sigma[ind, m]) * pos_sd[ind]
             p <- pg[ind, celltype[i]]
-
             prob <- pnorm(cutoff, mean = ms, sd = sds)  # compute x<0 prob
             prob_drop <- (1 - p)/(prob * p + (1 - p))
             I_drop <- rbinom(length(ind), 1, prob_drop)
