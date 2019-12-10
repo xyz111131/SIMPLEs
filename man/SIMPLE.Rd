@@ -149,7 +149,7 @@ cluster, the gene expression follows \eqn{Y|Z=m~MVN(\mu_m, B\Lambda_m B^T +
 \Sigma_m)} where B is a G by K0 matrix, \eqn{\Sigma_m} is a G by G diagonal
 matrix whose diagonal entries are specified by \emph{sigma}, and
 \eqn{\Lambda_m} is a K0 by K0 diagonal matrix whose diagonal entries are
-specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}. \cr
+specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}.
 
 The algorithm first runs Monte Carlo EM using only the genes with low dropout
 rate (initial phase) and initializes factor loadings and clustering

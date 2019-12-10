@@ -140,28 +140,28 @@ rank the genes by the number cells with nonzero expression and keep the top
 \emph{min_gene} genes in the initial phase.
 }
 \examples{
-library(foreach) \cr
-library(doParallel) \cr
-library(SIMPLE) \cr
-\cr
-M0 = 3  # simulate number of clusters \cr
-n = 300 # number of cells \cr
-\cr
-simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0) \cr
-\cr
-Y2 = simu_data$Y2 \cr
-K0 = 6 # number of factors \cr
-\cr
-registerDoParallel(cores = 6)  # parallel \cr
-\cr
-# estimate the parameters, only input the overall mean of all cell types from bulk \cr
-result <- SIMPLE_B(Y2, K0, data.frame(simu_data$bulk), M0, celltype=rep(1, n), clus = NULL, K = 20, p_min = 0.5, min_gene = 200,cutoff=0.01, max_lambda=T) \cr
-\cr
-# evaluate cluster performance \cr
-celltype_true = simu_data$Z \cr
-mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true) \cr
-# or redo clustering based on imputed values (sometimes work better for real data) \cr
-getCluster(result$impt, celltype_true, Ks = 20, M0 = M0)[[1]] \cr
+library(foreach) 
+library(doParallel) 
+library(SIMPLE) 
+
+M0 = 3  # simulate number of clusters 
+n = 300 # number of cells 
+
+simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0) 
+
+Y2 = simu_data$Y2 
+K0 = 6 # number of factors 
+
+registerDoParallel(cores = 6)  # parallel 
+
+# estimate the parameters, only input the overall mean of all cell types from bulk 
+result <- SIMPLE_B(Y2, K0, data.frame(simu_data$bulk), M0, celltype=rep(1, n), clus = NULL, K = 20, p_min = 0.5, min_gene = 200,cutoff=0.01, max_lambda=T) 
+
+# evaluate cluster performance 
+celltype_true = simu_data$Z 
+mclust::adjustedRandIndex(apply(result$z,1, which.max), celltype_true) 
+# or redo clustering based on imputed values (sometimes work better for real data) 
+getCluster(result$impt, celltype_true, Ks = 20, M0 = M0)[[1]] 
 
 }
 \seealso{

@@ -171,7 +171,8 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #'   each cluster at the last step of EM.} \item{consensus_cluster}{Score for
 #'   the clustering stability of each cell by multiple imputations. NULL if mcmc
 #'   <=0 } }
-#' @importFrom doParallel %dopar%
+#' @import doParallel
+#' @importFrom foreach foreach
 #' @seealso \code{\link{SIMPLE_B}}
 #' @examples
 #' library(foreach) 
