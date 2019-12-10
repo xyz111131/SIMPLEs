@@ -86,7 +86,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #' \Sigma_m)} where B is a G by K0 matrix, \eqn{\Sigma_m} is a G by G diagonal
 #' matrix whose diagonal entries are specified by \emph{sigma}, and
 #' \eqn{\Lambda_m} is a K0 by K0 diagonal matrix whose diagonal entries are
-#' specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}. \cr
+#' specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}.
 #'
 #' The algorithm first runs Monte Carlo EM using only the genes with low dropout
 #' rate (initial phase) and initializes factor loadings and clustering
@@ -171,6 +171,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #'   each cluster at the last step of EM.} \item{consensus_cluster}{Score for
 #'   the clustering stability of each cell by multiple imputations. NULL if mcmc
 #'   <=0 } }
+#' @importFrom doParallel %dopar%
 #' @seealso \code{\link{SIMPLE_B}}
 #' @examples
 #' library(foreach) 
