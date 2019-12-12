@@ -147,30 +147,38 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #' @param burnin The number of burnin steps before sample imputed data after EM.
 #'   Default = 2.
 #' @return \code{SIMPLE} returns a list of results in the following order.
-#'   \enumerate{ \item{loglik}{The log-likelihood of the imputed gene expression
-#'   at each iteration.} \item{pi}{Probabilites of cells belong to each
-#'   cluster.} \item{mu}{Mean expression for each cluster}
-#'   \item{sigma}{Variances of idiosyncratic noises for each cluster.}
-#'   \item{beta}{Factor loadings.} \item{lambda}{Variances of factors for each
-#'   cluster.} \item{z}{The probability of each cell belonging to each cluster.}
-#'   \item{Ef}{Conditonal expection the factors for each cluster \eqn{E(f_i|z_i
-#'   = m)}. A list with length M0, each element in the list is a n by K0
-#'   matrix.} \item{Varf}{Conditonal covariance of factors for each cluster
-#'   \eqn{Var(f_i|z_i = m)}. A list with length M0, each element in the list is
-#'   a K0 by K0 matrix.} \item{Yimp0}{A matrix contains the expectation of gene
-#'   expression.} \item{pg}{A G by M0 matrix, dropout rate for each gene in each
-#'   cluster defined by initial clustering.} \item{initclus}{Output initial
-#'   cluster results.} \item{impt}{A matrix contains the mean of each imputed
-#'   entry by sampling multiple imputed values at MLE. If mcmc <= 0, output
-#'   imputed expressoin matrix at last step of EM} \item{impt_var}{A matrix
-#'   contains the variance of each imputed entry by sampling multiple imputed
-#'   values at MLE. NULL if mcmc <= 0.} \item{EF}{Posterior means of factors
-#'   given observed data. If mcmc <= 0, output conditional mean for each cluster
-#'   at the last step of EM. } \item{varF}{Posterior covariance matrix of
-#'   factors given observed data. If mcmc <= 0, output conditional variance for
-#'   each cluster at the last step of EM.} \item{consensus_cluster}{Score for
-#'   the clustering stability of each cell by multiple imputations. NULL if mcmc
-#'   <=0 } }
+#'   \enumerate{
+#'     \item{loglik} {The log-likelihood of the imputed gene expression at each iteration.}
+#'     \item{pi}{Probabilites of cells belong to each cluster.}
+#'     \item{mu} {Mean expression for each cluster}
+#'     \item{sigma} {Variances of idiosyncratic noises for each cluster.}
+#'     \item{beta} {Factor loadings.}
+#'     \item{lambda} {Variances of factors for each cluster.}
+#'     \item{z} {The probability of each cell belonging to each cluster.}
+#'     \item{Ef} {Conditonal expection the factors for each cluster \eqn{E(f_i|z_i= m)}.
+#'      A list with length M0, each element in the list is a n by K0 matrix.}
+#'     \item{Varf} {Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}.
+#'      A list with length M0, each element in the list is a K0 by K0 matrix.}
+#'     \item{Yimp0} {A matrix contains the expectation of gene
+#'       expression.}
+#'     \item{pg} {A G by M0 matrix, dropout rate for each gene in each
+#'     cluster defined by initial clustering.}
+#'     \item{initclus} {Output initial cluster results.}
+#'     \item{impt} {A matrix contains the mean of each imputed
+#'     entry by sampling multiple imputed values at MLE. If mcmc <= 0, output
+#'     imputed expressoin matrix at last step of EM}
+#'     \item{impt_var} {A matrix
+#'     contains the variance of each imputed entry by sampling multiple imputed
+#'     values at MLE. NULL if mcmc <= 0.}
+#'     \item{EF} {Posterior means of factors
+#'     given observed data. If mcmc <= 0, output conditional mean for each cluster
+#'     at the last step of EM. }
+#'     \item{varF} {Posterior covariance matrix of
+#'     factors given observed data. If mcmc <= 0, output conditional variance for
+#'     each cluster at the last step of EM.}
+#'     \item{consensus_cluster} {Score for the clustering stability of each cell by multiple imputations.
+#'     NULL if mcmc <=0 }
+#' }
 #' @import doParallel
 #' @importFrom foreach foreach
 #' @seealso \code{\link{SIMPLE_B}}
