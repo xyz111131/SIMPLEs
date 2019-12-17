@@ -22,4 +22,6 @@ Imports:
     doParallel (>= 1.0.15),
     foreach (>= 1.4.7)
 RoxygenNote: 7.0.2
+Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
+LazyData: true
