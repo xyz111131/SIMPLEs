@@ -102,5 +102,60 @@ simulation_bulk <- function(n = 300, S0 = 10, K = 3, MC = 2, block_size = 50, ov
 }
 ```
 
+We then use this function to simulate the input data for `SIMPLEs`, and run it.
+We simulate 1000 genes expressedn in 300 cells. The cells are composed of 3
+clusters. In each cluster, we select 20 genes as the cluster specific genes,
+which are differentially # expressed in different clusters. Meanwhile, the genes
+have K=3 modules, each of which has block_size=100 genes with the overlap=55
+genes shared by two consecutive groups given an order of the group. The drop
+rate is 0.3.
+
+```{r, eval=FALSE}
+simu_data <- simulation_bulk(n=300, S0=20, K=3, MC=3, block_size=100, indepG=1000-190,
+                             overlap=55, dropr=0.3)
+```
+Then run SIMPLEs with or without bulk data. 
+```{r, eval=FALSE}
+simple_res <- SIMPLE(simu_data$Y2, K0=3, M0=3)
+# if we have the bulk data
+simpleb_res <- SIMPLE_B(simu_data$Y2, K0=3, M0=3, bulk=data.frame(simu_data$bulk))
+```
+
+We can evaluate the results with clustering and tsne plot.
+Actually, we can use either the cluster infered from SIMPLEs or we can re-do the clustering
+with the imputation results from SIMPLEs. Sometimes, re-do the clustering can get better
+result.
+
+```{r, eval=FALSE}
+# get the cluster infered from SIMPLEs
+simple_infered_cluster <- apply(simple_res$z, 1, which.max)
+# if we have use the SIMPLE_B
+simpleb_infered_cluster <- apply(simpleb_res$z, 1, which.max)
+```
+
+```{r, eval=FALSE}
+# re-do the clustering. Only use simple result as example. 
+scaled_data <- t(scale(t(simple_res$impt)))
+s <- svd(scaled_data)
+km <- kmeans(t(scaled_data) %*% s$u[, 1:20], 3, iter.max=80, nstart=300)
+```
+Compared with the true cluster, we can score the cluster as followed:
+```{r, eval=FALSE}
+library(mclust)
+# the larger, the better
+cluster_score <- mclust::adjustedRandIndex(km$cluster, simu_data$Z)
+```
+
+Besides clustering, we can use tsne and ggplot to bview the imputation result.
+```{r, eval=FALSE}
+library(Rtsne)
+library(ggplot2)
+tsne_res <- Rtsne::Rtsne(simple_res$impt, pca_scale=T, pca_center=T, initial_dims=20,
+                         pca = T)
+partial_tsne <- data.frame(cbind(tsne_res$Y[, 1:2]), simple_res$Z)
+colnames(partial_tsne) <- c("TSNE1", "TSNE2", "Type")
+p <- ggplot(partial_tsne, aes(x = TSNE1, y=TSNE2, color=Type)) + geom_point() + theme_bw()
+plot(p)
+```
 # Real Data Study
 
