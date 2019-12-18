@@ -49,3 +49,13 @@ You can view the vignettes in the package as reference.
 ```r
 vignettes(topic="SIMPLEs_example", package="SIMPLEs")
 ```
+
+## Data
+In our Vignettes, we introduce how to simulate the single cell RNASeq data.
+Furthermore, we provide a real dataset from the recent researches. You can view
+the details of the data, and test it with our SIMPLEs.
+```r
+# describe the details of the real dataset
+?SIMPLEs::chu
+```
+
