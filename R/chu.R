@@ -6,7 +6,7 @@
 #'
 #' @usage data(chu)
 #'
-#' @format include multiple datasets
+#' @format a list inclue the following fields
 #' \describe{
 #'   \item{chu_normalized_data}{single cell RNASeq data, i.e., 
 #'   3000 * 763 matrix with each row as gene and each column as cell.

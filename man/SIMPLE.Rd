@@ -180,7 +180,8 @@ library(SIMPLEs)
 # simulate number of clusters
 M0 = 3 
 # number of cells
-n = 300 
+n = 300
+# simulation_bulk and getCluster is defined in the util.R under the util dir of the corresponding github repository.
 simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0)
 Y2 = simu_data$Y2 
 # number of factors
