@@ -6,7 +6,7 @@
 #'
 #' @usage data(chu)
 #'
-#' @format a list inclue the following fields
+#' @format a list includes the following fields
 #' \describe{
 #'   \item{chu_normalized_data}{single cell RNASeq data, i.e., 
 #'   3000 * 763 matrix with each row as gene and each column as cell.
@@ -25,7 +25,7 @@
 #'
 #' @examples
 #' data(chu)
-#' num_genes <- nrow(chu_normalized_data)
-#' num_cells <- ncol(chu_normalized_data)
-#' stat_celltype <- table(factor(chu_cell_type))
+#' single_cell_data <- chu$chu_normalized_data
+#' bulk_rna_data  <- chu$chu_bulk_mean
+#' cell_type <- chu$chu_cell_type
 "chu"
