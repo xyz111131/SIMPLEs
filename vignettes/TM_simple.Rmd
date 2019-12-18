@@ -162,4 +162,7 @@ plot(p)
 # Real Data Study
 The single cell RNASeq and the bulk RNASeq data from the human embryonic stem cell
 differentiation towards definitive endoderm are used as the real data study. We randomly selected part of the original data, and put it in our R package under `data` directory.
+```{r}
+data(chu)
+```
 

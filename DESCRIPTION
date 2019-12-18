@@ -24,9 +24,9 @@ Imports:
 RoxygenNote: 7.0.2
 Suggests:
     knitr,
-    rmarkdown
-    Rtsne
-    mclust
+    rmarkdown,
+    Rtsne,
+    mclust,
     ggplot2
 VignetteBuilder: knitr
 LazyData: true
