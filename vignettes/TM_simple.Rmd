@@ -150,6 +150,8 @@ Besides clustering, we can use tsne and ggplot to bview the imputation result.
 ```{r, eval=FALSE}
 library(Rtsne)
 library(ggplot2)
+# for reproducible, we set the seed to tsne.
+set.seed(0)
 tsne_res <- Rtsne::Rtsne(simple_res$impt, pca_scale=T, pca_center=T, initial_dims=20,
                          pca = T)
 partial_tsne <- data.frame(cbind(tsne_res$Y[, 1:2]), simple_res$Z)
@@ -158,4 +160,6 @@ p <- ggplot(partial_tsne, aes(x = TSNE1, y=TSNE2, color=Type)) + geom_point() + 
 plot(p)
 ```
 # Real Data Study
+The single cell RNASeq and the bulk RNASeq data from the human embryonic stem cell
+differentiation towards definitive endoderm are used as the real data study. We randomly selected part of the original data, and put it in our R package under `data` directory.
 
