@@ -44,4 +44,8 @@ install it.
 #>   build_vignettes as TRUE.
 devtools::install_github("xyz111131/SIMPLEs", ref="master", build_vignettes=FALSE)
 ```
-
+## Vignettes
+You can view the vignettes in the package as reference.
+```r
+vignettes(topic="SIMPLEs_example", package="SIMPLEs")
+```
