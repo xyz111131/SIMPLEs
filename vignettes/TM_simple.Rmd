@@ -161,8 +161,34 @@ plot(p)
 ```
 # Real Data Study
 The single cell RNASeq and the bulk RNASeq data from the human embryonic stem cell
-differentiation towards definitive endoderm are used as the real data study. We randomly selected part of the original data, and put it in our R package under `data` directory.
-```{r}
+differentiation towards definitive endoderm are used as the real data study.
+We randomly selected part of the original data, and put it in our R package under `data` directory.
+For details, you can use `?chu` to see the help document of the dataset.
+```{r, eval=FALSE}
+# load chu dataset
 data(chu)
 ```
+Now we can use the SIMPLE on the real data.
+```{r, eval = FALSE}
+chu_simpleb_res <- SIMPLE_B(chu$chu_normalized_data, K0=10, M0=7,
+                            bulk=data.frame(chu$chu_bulk_mean))
+```
+We can add more dropouts given a dropout rate.
+```{r, eval=FALSE}
+dropP <- 0.3
+G <- nrow(chu$chu_normalized_data)
+n <- ncol(chu$chu_normalized_data)
+Z <- matrix(rbinom(G*n, 1, exp(-dropP * rowMeans(chu$chu_normalized_data))),
+            nrow=G)
+more_dropout_data <- chu$chu_normalized_data
+more_dropout_data[Z==1] <- 0
+```
 
+We can test SIMPLEs on the modified data to see its imputation result by
+the mean square error.
+```{r, eval = FALSE}
+chu_more_dropout_impute <- SIMPLE_B(more_dropout_data, K0=10, M0=7,
+                                    bulk=data.frame(chu$chu_bulk_mean))
+# the smaller, the better                                    
+mse <- mean((chu_more_dropout_impute$impt[Z==1] - chu$chu_normalized_data[Z==1])^2)
+```
