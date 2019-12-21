@@ -1,6 +1,6 @@
 # SIMPLEs: single-cell RNA sequencing imputation and cell clustering methods by modeling gene module variation
 
-Author:  Hu Z.
+Author:  Zhirui Hu, Songpeng Zu
 
 ## Introduction
 SIMPLE is a R package that imputes "dropout" values (i.e. zero or small entries)
@@ -37,7 +37,25 @@ The package is not on CRAN yet. You can use the following codes in `R` to
 install it.
 
 ```r
-install.packages("devtools")
-library(devtools)
-devtools::install_github("xyz111131/SIMPLEs")
+#> use devtools package to install the repo from github
+#> - if you want to follow the latest but unstable version, you can set 
+#>   the ref as"develop".
+#> - if you want to build the vignettes for reference, you can set 
+#>   build_vignettes as TRUE.
+devtools::install_github("xyz111131/SIMPLEs", ref="master", build_vignettes=FALSE)
 ```
+## Vignettes
+You can view the vignettes in the package as reference.
+```r
+vignettes(topic="SIMPLEs_example", package="SIMPLEs")
+```
+
+## Data
+In our Vignettes, we introduce how to simulate the single cell RNASeq data.
+Furthermore, we provide a real dataset from the recent researches. You can view
+the details of the data, and test it with our SIMPLEs.
+```r
+# describe the details of the real dataset
+?SIMPLEs::chu
+```
+

@@ -24,7 +24,7 @@ SIMPLE(
   clus = NULL,
   p_min = 0.8,
   cutoff = 0.1,
-  K = 10,
+  K = 20,
   min_gene = 300,
   num_mc = 3,
   fix_num = F,
@@ -39,12 +39,11 @@ SIMPLE(
 
 \item{M0}{Number of clusters. See details.}
 
-\item{iter}{Number of EM iterations for full data set. See details.}
+\item{iter}{The number of EM iterations using full data set. See details.}
 
 \item{est_lam}{The iteration starts to estimate lambda.}
 
-\item{impt_it}{The iteration starts to sample new imputed values in initial
-phase. See details.}
+\item{impt_it}{The iteration starts to sample new imputed values in initial phase. See details.}
 
 \item{penl}{L1 penalty for the factor loadings.}
 
@@ -74,7 +73,7 @@ each cluster. Each column is for a cell cluster. If NULL, it will take the
 sample mean of cells weighted by the probability in each cluster. See
 details.}
 
-\item{est_z}{The iteration starts to update z.}
+\item{est_z}{The iteration starts to update Z.}
 
 \item{clus}{Initial clustering of scRNASeq data. If NULL, the function will
 use PCA and Kmeans to do clustering initially.}
@@ -106,30 +105,38 @@ Default = 2.}
 }
 \value{
 \code{SIMPLE} returns a list of results in the following order.
-  \enumerate{ \item{loglik}{The log-likelihood of the imputed gene expression
-  at each iteration.} \item{pi}{Probabilites of cells belong to each
-  cluster.} \item{mu}{Mean expression for each cluster}
-  \item{sigma}{Variances of idiosyncratic noises for each cluster.}
-  \item{beta}{Factor loadings.} \item{lambda}{Variances of factors for each
-  cluster.} \item{z}{The probability of each cell belonging to each cluster.}
-  \item{Ef}{Conditonal expection the factors for each cluster \eqn{E(f_i|z_i
-  = m)}. A list with length M0, each element in the list is a n by K0
-  matrix.} \item{Varf}{Conditonal covariance of factors for each cluster
-  \eqn{Var(f_i|z_i = m)}. A list with length M0, each element in the list is
-  a K0 by K0 matrix.} \item{Yimp0}{A matrix contains the expectation of gene
-  expression.} \item{pg}{A G by M0 matrix, dropout rate for each gene in each
-  cluster defined by initial clustering.} \item{initclus}{Output initial
-  cluster results.} \item{impt}{A matrix contains the mean of each imputed
-  entry by sampling multiple imputed values at MLE. If mcmc <= 0, output
-  imputed expressoin matrix at last step of EM} \item{impt_var}{A matrix
-  contains the variance of each imputed entry by sampling multiple imputed
-  values at MLE. NULL if mcmc <= 0.} \item{EF}{Posterior means of factors
-  given observed data. If mcmc <= 0, output conditional mean for each cluster
-  at the last step of EM. } \item{varF}{Posterior covariance matrix of
-  factors given observed data. If mcmc <= 0, output conditional variance for
-  each cluster at the last step of EM.} \item{consensus_cluster}{Score for
-  the clustering stability of each cell by multiple imputations. NULL if mcmc
-  <=0 } }
+  \enumerate{
+    \item{loglik} {The log-likelihood of the imputed gene expression at each iteration.}
+    \item{pi}{Probabilites of cells belong to each cluster.}
+    \item{mu} {Mean expression for each cluster}
+    \item{sigma} {Variances of idiosyncratic noises for each cluster.}
+    \item{beta} {Factor loadings.}
+    \item{lambda} {Variances of factors for each cluster.}
+    \item{z} {The probability of each cell belonging to each cluster.}
+    \item{Ef} {Conditonal expection the factors for each cluster \eqn{E(f_i|z_i= m)}.
+     A list with length M0, each element in the list is a n by K0 matrix.}
+    \item{Varf} {Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}.
+     A list with length M0, each element in the list is a K0 by K0 matrix.}
+    \item{Yimp0} {A matrix contains the expectation of gene
+      expression.}
+    \item{pg} {A G by M0 matrix, dropout rate for each gene in each
+    cluster defined by initial clustering.}
+    \item{initclus} {Output initial cluster results.}
+    \item{impt} {A matrix contains the mean of each imputed
+    entry by sampling multiple imputed values at MLE. If mcmc <= 0, output
+    imputed expressoin matrix at last step of EM}
+    \item{impt_var} {A matrix
+    contains the variance of each imputed entry by sampling multiple imputed
+    values at MLE. NULL if mcmc <= 0.}
+    \item{EF} {Posterior means of factors
+    given observed data. If mcmc <= 0, output conditional mean for each cluster
+    at the last step of EM. }
+    \item{varF} {Posterior covariance matrix of
+    factors given observed data. If mcmc <= 0, output conditional variance for
+    each cluster at the last step of EM.}
+    \item{consensus_cluster} {Score for the clustering stability of each cell by multiple imputations.
+    NULL if mcmc <=0 }
+}
 }
 \description{
 \code{SIMPLE} imputes zeros in the gene expression data using the expression level in
@@ -150,7 +157,7 @@ cluster, the gene expression follows \eqn{Y|Z=m~MVN(\mu_m, B\Lambda_m B^T +
 \Sigma_m)} where B is a G by K0 matrix, \eqn{\Sigma_m} is a G by G diagonal
 matrix whose diagonal entries are specified by \emph{sigma}, and
 \eqn{\Lambda_m} is a K0 by K0 diagonal matrix whose diagonal entries are
-specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}. \cr
+specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}.
 
 The algorithm first runs Monte Carlo EM using only the genes with low dropout
 rate (initial phase) and initializes factor loadings and clustering
@@ -168,13 +175,13 @@ It will also output the posterior mean and variance for the imputed values and c
 \examples{
 library(foreach) 
 library(doParallel) 
-library(SIMPLE) 
-source('SIMPLE/utils/utils.R')
+library(SIMPLEs) 
 
 # simulate number of clusters
 M0 = 3 
 # number of cells
-n = 300 
+n = 300
+# simulation_bulk and getCluster is defined in the util.R under the util dir of the corresponding github repository.
 simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0)
 Y2 = simu_data$Y2 
 # number of factors
@@ -192,7 +199,7 @@ getCluster(result$impt, celltype_true, Ks = 20, M0 = M0)[[1]]
 
 }
 \seealso{
-[SIMPLE_B()]
+\code{\link{SIMPLE_B}}
 }
 \author{
 Zhirui Hu, \email{zhiruihu@g.harvard.edu}

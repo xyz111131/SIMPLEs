@@ -18,6 +18,15 @@ Imports:
     matrixStats (>= 0.54.0),
     mixtools (>= 1.1.0),
     Rsolnp (>= 1.16),
-    msm (>= 1.6.7)
-RoxygenNote: 7.0.1
+    msm (>= 1.6.7),
+    doParallel (>= 1.0.15),
+    foreach (>= 1.4.7)
+RoxygenNote: 7.0.2
+Suggests:
+    knitr,
+    rmarkdown,
+    Rtsne,
+    mclust,
+    ggplot2
 VignetteBuilder: knitr
+LazyData: true

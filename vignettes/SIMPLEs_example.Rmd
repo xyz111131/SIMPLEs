@@ -1,0 +1,194 @@
+---
+title: "SIMPLEs example"
+author:
+  - name: "Zhirui Hu, Songpeng Zu"
+package: "SIMPLEs"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{SIMPLEs: single-cell RNA sequencing imputation and cell clustering methods by modeling gene module variation}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+```{r, echo = FALSE}
+  knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+```{r}
+library(SIMPLEs)
+```
+# Quick Start
+If you have the single cell data, for which each row is the gene, and each column is the cell, the content is the log normalized TPM or RPKM, you can directly use `SIMPLEs` as followed:
+```{r eval=FALSE}
+library(doParallel)
+library(foreach)
+library(SIMPLEs)
+# SIMPLEs need parallel to speed up.
+registerDoParallel(cores = 8)
+# set cluster number, default is 1
+M0 <- 1
+# set latent module dimenstion, default is 10.
+K0 <- 10
+result <- SIMPLE(dat = data, K0=K0, M0=M0)
+# result$impt is the imputated result for the data.
+```
+
+# Simulation Data Study
+## Data Generation
+Here we introduce the function to simulate the single cell data and the corresponding RNASeq bulk data.
+```{r}
+simulation_bulk <- function(n = 300, S0 = 10, K = 3, MC = 2, block_size = 50, overlap = 15, indepG = 30, dropout = 0.3) {
+    B = NULL
+    W = NULL
+    Lambda = NULL
+    # sample Y from Factor model, Y = BW + E, W: K*n, Y: G*n, E: G*n
+    Z = rmultinom(n, 1, rep(1/MC, MC))
+    Z = apply(Z, 2, which.max)
+    Z = sort(Z)
+    
+    if (K > 0) {
+        # generate data
+        G = block_size + (K - 1) * (block_size - overlap) + indepG  #120
+    } else {
+        G = indepG
+    }
+    Sigma = rgamma(G, 2, 1/0.3)  #rnorm(G, 0.6, 0.1)
+    Mu = exp(rnorm(G, mean = 0.5, sd = 0.5)) %*% t(rep(1, MC))
+    
+    act_ind = sample(1:G, S0 * MC)
+    label0 = matrix(0, G, MC)
+    # specify mean for each cluster
+    for (m in 1:MC) {
+        ss = ((m - 1) * S0 + 1):(m * S0)
+        Mu[act_ind[ss], m] = Mu[act_ind[ss], m] * sample(c(0.2, 0.5, 1.2, 1.5, 2), S0, replace = T)
+        label0[act_ind[ss], m] = 1
+    }
+    if (K > 0) {
+        # Factor Loading
+        Gamma <- matrix(0, G, K)
+        Gamma[1:block_size, 1] <- 1
+        if (K > 1) {
+            for (i in 1:K) {
+                Gamma[((block_size - overlap) * (i - 1) + 1):
+                        (block_size + (block_size - overlap) * (i - 1)), i] <- 1
+            }
+        }
+        B = Gamma/4  #sqrt(block_size) # eigenvalue of BB^T = block_size * B^2
+        # specify variance for each cluster
+        Lambda = list()
+        for (m in 1:MC) {
+            Lambda[[m]] = diag(1, K, K)
+        }
+        # matrix(rnorm(K*n), K, n) # K * n
+        W = sapply(Z, function(z) mixtools::rmvnorm(1, rep(0, K), Lambda[[z]]))
+        E = matrix(rnorm(G * n), nrow = G) * Sigma
+        Y = Mu[, Z] + B %*% W + E
+    } else {
+        Y = matrix(rnorm(G * n, Mu[, Z], Sigma), nrow = G)
+    }
+    # add dropout
+    Y2 = Y
+    dZ = matrix(rbinom(G * n, 1, exp(-dropout * rowMeans(Mu)^2)), nrow = G)  # 0.3
+    Y2[dZ == 1] = 0
+    Y2[Y2 < 0] = 0
+    ind = which(rowSums(Y2 != 0) > 4)
+    Y2 = Y2[ind, ]
+    Y = Y[ind, ]
+    label0 = label0[ind, ]
+    B = B[ind, ]
+    Mu = Mu[ind, ]
+    Sigma = Sigma[ind]
+    return(list(Y1 = Y2, Y = Y, B = B, W = W, Mu = Mu, 
+                Lambda = Lambda, Sigma = Sigma, Z = Z, bulk = rowMeans(Mu[, Z]), S_label = label0))
+}
+```
+
+We then use this function to simulate the input data for `SIMPLEs`, and run it.
+We simulate 1000 genes expressedn in 300 cells. The cells are composed of 3
+clusters. In each cluster, we select 20 genes as the cluster specific genes,
+which are differentially # expressed in different clusters. Meanwhile, the genes
+have K=3 modules, each of which has block_size=100 genes with the overlap=55
+genes shared by two consecutive groups given an order of the group. The drop
+rate is 0.3.
+
+```{r, eval=FALSE}
+simu_data <- simulation_bulk(n=300, S0=20, K=3, MC=3, block_size=100, indepG=1000-190,
+                             overlap=55, dropr=0.3)
+```
+Then run SIMPLEs with or without bulk data. 
+```{r, eval=FALSE}
+simple_res <- SIMPLE(simu_data$Y2, K0=3, M0=3)
+# if we have the bulk data
+simpleb_res <- SIMPLE_B(simu_data$Y2, K0=3, M0=3, bulk=data.frame(simu_data$bulk))
+```
+
+We can evaluate the results with clustering and tsne plot.
+Actually, we can use either the cluster infered from SIMPLEs or we can re-do the clustering
+with the imputation results from SIMPLEs. Sometimes, re-do the clustering can get better
+result.
+
+```{r, eval=FALSE}
+# get the cluster infered from SIMPLEs
+simple_infered_cluster <- apply(simple_res$z, 1, which.max)
+# if we have use the SIMPLE_B
+simpleb_infered_cluster <- apply(simpleb_res$z, 1, which.max)
+```
+
+```{r, eval=FALSE}
+# re-do the clustering. Only use simple result as example. 
+scaled_data <- t(scale(t(simple_res$impt)))
+s <- svd(scaled_data)
+km <- kmeans(t(scaled_data) %*% s$u[, 1:20], 3, iter.max=80, nstart=300)
+```
+Compared with the true cluster, we can score the cluster as followed:
+```{r, eval=FALSE}
+library(mclust)
+# the larger, the better
+cluster_score <- mclust::adjustedRandIndex(km$cluster, simu_data$Z)
+```
+
+Besides clustering, we can use tsne and ggplot to bview the imputation result.
+```{r, eval=FALSE}
+library(Rtsne)
+library(ggplot2)
+# for reproducible, we set the seed to tsne.
+set.seed(0)
+tsne_res <- Rtsne::Rtsne(simple_res$impt, pca_scale=T, pca_center=T, initial_dims=20,
+                         pca = T)
+partial_tsne <- data.frame(cbind(tsne_res$Y[, 1:2]), simple_res$Z)
+colnames(partial_tsne) <- c("TSNE1", "TSNE2", "Type")
+p <- ggplot(partial_tsne, aes(x = TSNE1, y=TSNE2, color=Type)) + geom_point() + theme_bw()
+plot(p)
+```
+# Real Data Study
+The single cell RNASeq and the bulk RNASeq data from the human embryonic stem cell
+differentiation towards definitive endoderm are used as the real data study.
+We randomly selected part of the original data, and put it in our R package under `data` directory.
+For details, you can use `?chu` to see the help document of the dataset.
+```{r, eval=FALSE}
+# load chu dataset
+data(chu)
+```
+Now we can use the SIMPLE on the real data.
+```{r, eval = FALSE}
+chu_simpleb_res <- SIMPLE_B(chu$chu_normalized_data, K0=10, M0=7,
+                            bulk=data.frame(chu$chu_bulk_mean))
+```
+We can add more dropouts given a dropout rate.
+```{r, eval=FALSE}
+dropP <- 0.3
+G <- nrow(chu$chu_normalized_data)
+n <- ncol(chu$chu_normalized_data)
+Z <- matrix(rbinom(G*n, 1, exp(-dropP * rowMeans(chu$chu_normalized_data))),
+            nrow=G)
+more_dropout_data <- chu$chu_normalized_data
+more_dropout_data[Z==1] <- 0
+```
+
+We can test SIMPLEs on the modified data to see its imputation result by
+the mean square error.
+```{r, eval = FALSE}
+chu_more_dropout_impute <- SIMPLE_B(more_dropout_data, K0=10, M0=7,
+                                    bulk=data.frame(chu$chu_bulk_mean))
+# the smaller, the better                                    
+mse <- mean((chu_more_dropout_impute$impt[Z==1] - chu$chu_normalized_data[Z==1])^2)
+```
