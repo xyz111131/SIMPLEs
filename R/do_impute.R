@@ -23,7 +23,6 @@
 #'   \item{varF}{Posterior covariance matrix of factors}
 #'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. }
 #' }
-#' @export
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 #'
@@ -157,5 +156,5 @@ do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_
     varF <- record_F2/mcmc - (record_EF/mcmc)^2 + record_varF[, seq(1, K0^2, by = (K0 + 
         1))]/mcmc
     return(list(loglik = tot, impt = (record_impt/mcmc) * pos_sd + pos_mean, impt_var = record_impt2/mcmc - 
-        (record_impt/mcmc)^2, EF = record_EF/mcmc, varF = varF, consensus_cluster = consensus_cluster/mcmc))
+        (record_impt/mcmc)^2, Ef = record_EF/mcmc, varF = varF, consensus_cluster = consensus_cluster/mcmc))
 }
