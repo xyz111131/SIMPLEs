@@ -1,6 +1,6 @@
 # SIMPLEs: single-cell RNA sequencing imputation and cell clustering methods by modeling gene module variation
 
-Author:  Zhirui Hu, Songpeng Zu
+Authors:  Zhirui Hu, Songpeng Zu
 
 ## Introduction
 SIMPLE is a R package that imputes "dropout" values (i.e. zero or small entries)
