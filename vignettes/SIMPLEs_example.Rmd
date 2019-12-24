@@ -15,15 +15,15 @@ vignette: >
 
 ```{r}
 library(SIMPLEs)
+library(doParallel)
+library(foreach)
+# SIMPLEs may need parallel to speed up.
+registerDoParallel(cores = 8)
 ```
 # Quick Start
 If you have the single cell data, for which each row is the gene, and each column is the cell, the content is the log normalized TPM or RPKM, you can directly use `SIMPLEs` as followed:
 ```{r eval=FALSE}
-library(doParallel)
-library(foreach)
 library(SIMPLEs)
-# SIMPLEs need parallel to speed up.
-registerDoParallel(cores = 8)
 # set cluster number, default is 1
 M0 <- 1
 # set latent module dimenstion, default is 10.
@@ -114,18 +114,18 @@ rate is 0.3.
 n_cell <- 300
 simu_data <- simulation_bulk(n=n_cell, S0=20, K=3, MC=3, block_size=100, indepG=1000-190,
                              overlap=55, dropout=0.3)
+celltype_true = simu_data$Z
 ```
 Then run SIMPLEs with or without bulk data. 
 ```{r, eval=FALSE}
-simple_res <- SIMPLE(simu_data$Y2, K0=3, M0=3)
+simple_res <- SIMPLE(simu_data$Y2, K0=3, M0=3,p_min=0.6,max_lambda = T,cutoff=0.01)
 # if we have the bulk data
-simpleb_res <- SIMPLE_B(simu_data$Y2, K0=3, M0=3, celltype=rep(1,n_cell),bulk=data.frame(simu_data$bulk))
+simpleb_res <- SIMPLE_B(simu_data$Y2, K0=3, M0=3,p_min=0.6,max_lambda = T,cutoff=0.01,celltype=rep(1,n_cell),bulk=data.frame(simu_data$bulk))
 ```
 
-We can evaluate the results with clustering and tsne plot.
-Actually, we can use either the cluster infered from SIMPLEs or we can re-do the clustering
-with the imputation results from SIMPLEs. Sometimes, re-do the clustering can get better
-result.
+We can evaluate the clustering results and get the tsne plot from the imputed data.
+SIMPLEs will output the clusters of cells but we can also re-do the clustering
+with the imputation results from SIMPLEs. Sometimes, re-do the clustering can get better result.
 
 ```{r, eval=FALSE}
 # get the cluster infered from SIMPLEs
@@ -135,16 +135,17 @@ simpleb_infered_cluster <- apply(simpleb_res$z, 1, which.max)
 ```
 
 ```{r, eval=FALSE}
-# re-do the clustering. Only use simple result as example. 
+# re-do the clustering. Only use the result from SIMPlE as an example. 
 scaled_data <- t(scale(t(simple_res$impt)))
 s <- svd(scaled_data)
 km <- kmeans(t(scaled_data) %*% s$u[, 1:20], 3, iter.max=80, nstart=300)
 ```
-Compared with the true cluster, we can score the cluster as followed:
+Compared with the true clusters, we can compute adjusted rand index as following:
 ```{r, eval=FALSE}
 library(mclust)
-# the larger, the better
-cluster_score <- mclust::adjustedRandIndex(km$cluster, simu_data$Z)
+# between 0 and 1; the larger, the better
+cluster_score <- mclust::adjustedRandIndex(km$cluster, celltype_true)
+cluster_score1 <- mclust::adjustedRandIndex(simple_infered_cluster, celltype_true)
 ```
 
 Besides clustering, we can use tsne and ggplot to bview the imputation result.
@@ -153,9 +154,9 @@ library(Rtsne)
 library(ggplot2)
 # for reproducible, we set the seed to tsne.
 set.seed(0)
-tsne_res <- Rtsne::Rtsne(simple_res$impt, pca_scale=T, pca_center=T, initial_dims=20,
+tsne_res <- Rtsne::Rtsne(t(simple_res$impt), pca_scale=T, pca_center=T, initial_dims=20,
                          pca = T)
-partial_tsne <- data.frame(cbind(tsne_res$Y[, 1:2]), simple_res$Z)
+partial_tsne <- data.frame(cbind(tsne_res$Y[, 1:2]), celltype_true)
 colnames(partial_tsne) <- c("TSNE1", "TSNE2", "Type")
 p <- ggplot(partial_tsne, aes(x = TSNE1, y=TSNE2, color=Type)) + geom_point() + theme_bw()
 plot(p)
@@ -163,7 +164,7 @@ plot(p)
 # Real Data Study
 The single cell RNASeq and the bulk RNASeq data from the human embryonic stem cell
 differentiation towards definitive endoderm are used as the real data study.
-We randomly selected part of the original data, and put it in our R package under `data` directory.
+As the dataset is large, we randomly selected part of the original data, and put it in our R package under `data` directory.
 For details, you can use `?chu` to see the help document of the dataset.
 ```{r, eval=FALSE}
 # load chu dataset
