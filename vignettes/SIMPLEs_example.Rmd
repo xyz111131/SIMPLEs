@@ -120,7 +120,8 @@ Then run SIMPLEs with or without bulk data.
 ```{r, eval=FALSE}
 simple_res <- SIMPLE(simu_data$Y2, K0=3, M0=3,p_min=0.6,max_lambda = T,cutoff=0.01)
 # if we have the bulk data
-simpleb_res <- SIMPLE_B(simu_data$Y2, K0=3, M0=3,p_min=0.6,max_lambda = T,cutoff=0.01,celltype=rep(1,n_cell),bulk=data.frame(simu_data$bulk))
+simpleb_res <- SIMPLE_B(simu_data$Y2, K0=3, bulk=data.frame(simu_data$bulk),
+                        celltype=rep(1,n_cell), M0=3,p_min=0.6,max_lambda = T,cutoff=0.01)
 ```
 
 We can evaluate the clustering results and get the tsne plot from the imputed data.
@@ -163,17 +164,26 @@ plot(p)
 ```
 # Real Data Study
 The single cell RNASeq and the bulk RNASeq data from the human embryonic stem cell
-differentiation towards definitive endoderm are used as the real data study.
+differentiation towards definitive endoderm are used as the real data study. There are 7 cell types in this dataset.
 As the dataset is large, we randomly selected part of the original data, and put it in our R package under `data` directory.
 For details, you can use `?chu` to see the help document of the dataset.
 ```{r, eval=FALSE}
 # load chu dataset
 data(chu)
 ```
-Now we can use the SIMPLE on the real data.
+Now we can use SIMPLEs on the real data.
 ```{r, eval = FALSE}
-chu_simpleb_res <- SIMPLE_B(chu$chu_normalized_data, K0=10, M0=7,
-                            bulk=data.frame(chu$chu_bulk_mean))
+ncell = ncol(chu$chu_normalized_data)
+chu_simpleb_res <- SIMPLE_B(chu$chu_normalized_data,
+                            bulk=data.frame(chu$chu_bulk_mean), 
+                            celltype=rep(1,ncell), K0=10, M0=7,max_lambda = T)
+```
+We can re-do the clustering using the same procedure above. We didn't get perfect score because we only subsampled 3000 genes and H1/H9 are hard to distinguish.
+```{r, eval=FALSE}
+scaled_data <- t(scale(t(chu_simpleb_res$impt)))
+s <- svd(scaled_data)
+km <- kmeans(t(scaled_data) %*% s$u[, 1:20], 7, iter.max=80, nstart=300)
+cluster_score = mclust::adjustedRandIndex(km$cluster, chu$chu_cell_type)
 ```
 We can add more dropouts given a dropout rate.
 ```{r, eval=FALSE}
@@ -189,8 +199,11 @@ more_dropout_data[Z==1] <- 0
 We can test SIMPLEs on the modified data to see its imputation result by
 the mean square error.
 ```{r, eval = FALSE}
-chu_more_dropout_impute <- SIMPLE_B(more_dropout_data, K0=10, M0=7,
-                                    bulk=data.frame(chu$chu_bulk_mean))
+chu_more_dropout_impute <- SIMPLE_B(more_dropout_data, celltype=rep(1,ncell),
+                                    K0=10, M0=7,bulk=data.frame(chu$chu_bulk_mean))
 # the smaller, the better                                    
 mse <- mean((chu_more_dropout_impute$impt[Z==1] - chu$chu_normalized_data[Z==1])^2)
+
+simpleb_infered_cluster <- apply(chu_more_dropout_impute$z, 1, which.max)
+mclust::adjustedRandIndex(simpleb_infered_cluster, chu$chu_cell_type)
 ```
