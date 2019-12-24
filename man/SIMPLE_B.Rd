@@ -4,9 +4,9 @@
 \alias{SIMPLE_B}
 \title{Impute zero entries and clustering for scRNASeq data integrating bulk RNASeq}
 \usage{
-SIMPLE_B(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL,
-  K = 20, iter = 10, est_z = 1, impt_it = 5, max_lambda = F,
-  est_lam = 1, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL,
+SIMPLE_B(dat, K0, bulk, celltype, M0 = 1, clus = NULL, K = 20,
+  iter = 10, est_z = 1, impt_it = 3, max_lambda = F, est_lam = 1,
+  penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL,
   lambda = NULL, sigma = NULL, mu = NULL, p_min = 0.8,
   min_gene = 300, cutoff = 0.1, verbose = F, num_mc = 3,
   fix_num = F, mcmc = 50, burnin = 2)
@@ -18,9 +18,9 @@ SIMPLE_B(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL,
 
 \item{bulk}{Bulk RNASeq data matrix. Each row is a gene which must be ordered the same as the scRNASeq data. Each column is a cell type which must be ordered as the cell type label in \emph{celltype}.}
 
-\item{M0}{Number of clusters. See details.}
-
 \item{celltype}{A numeric vector for labels of cells in the scRNASeq. Each cell type has corresponding mean expression in the bulk RNASeq data. The labels must start from 1 to the number of types. If NULL, all cells are treated as a single cell type and the input bulk RNASeq should also have one column that is the mean expression over all the cell types.}
+
+\item{M0}{Number of clusters. See details.}
 
 \item{clus}{Initial clustering of scRNASeq data. If NULL, the function will use PCA and Kmeans to do clustering initially.}
 
