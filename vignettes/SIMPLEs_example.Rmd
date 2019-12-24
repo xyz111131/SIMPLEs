@@ -185,24 +185,32 @@ s <- svd(scaled_data)
 km <- kmeans(t(scaled_data) %*% s$u[, 1:20], 7, iter.max=80, nstart=300)
 cluster_score = mclust::adjustedRandIndex(km$cluster, chu$chu_cell_type)
 ```
-We can add more dropouts given a dropout rate.
+We can add more dropouts to the original data to check if we can recover.
 ```{r, eval=FALSE}
 dropP <- 0.3
 G <- nrow(chu$chu_normalized_data)
 n <- ncol(chu$chu_normalized_data)
-Z <- matrix(rbinom(G*n, 1, exp(-dropP * rowMeans(chu$chu_normalized_data))),
+Z <- matrix(rbinom(G*n, 1, exp(-dropP * rowMeans(chu$chu_normalized_data)^2)),
             nrow=G)
 more_dropout_data <- chu$chu_normalized_data
 more_dropout_data[Z==1] <- 0
+
+## filter out genes with very few nonzeros
+ind = which(rowSums(more_dropout_data != 0) > 20)
+more_dropout_data = more_dropout_data[ind, ]
+original_data = chu$chu_normalized_data
+original_data = original_data[ind, ]
+bulk = data.frame(chu$chu_bulk_mean[ind])
+Z = Z[ind, ]
 ```
 
 We can test SIMPLEs on the modified data to see its imputation result by
 the mean square error.
 ```{r, eval = FALSE}
-chu_more_dropout_impute <- SIMPLE_B(more_dropout_data, celltype=rep(1,ncell),
-                                    K0=10, M0=7,bulk=data.frame(chu$chu_bulk_mean))
+chu_more_dropout_impute <- SIMPLE_B(more_dropout_data, celltype=rep(1,n),p_min=0.6,
+                                    K0=10, M0=7,bulk=bulk)
 # the smaller, the better                                    
-mse <- mean((chu_more_dropout_impute$impt[Z==1] - chu$chu_normalized_data[Z==1])^2)
+mse <- mean((chu_more_dropout_impute$impt[Z==1] - original_data[Z==1])^2)
 
 simpleb_infered_cluster <- apply(chu_more_dropout_impute$z, 1, which.max)
 mclust::adjustedRandIndex(simpleb_infered_cluster, chu$chu_cell_type)
