@@ -429,7 +429,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, impt = result2$impt, impt_var = result2$impt_var, 
-            Ef = result2$Ef, Varf = result2$Varf, consensus_cluster = result2$consensus_cluster))
+            Ef = result2$EF, Varf = result2$varF, consensus_cluster = result2$consensus_cluster))
     } else {
         
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 

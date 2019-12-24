@@ -4,35 +4,12 @@
 \alias{SIMPLE_B}
 \title{Impute zero entries and clustering for scRNASeq data integrating bulk RNASeq}
 \usage{
-SIMPLE_B(
-  dat,
-  K0,
-  bulk,
-  M0 = 1,
-  celltype = NULL,
-  clus = NULL,
-  K = 20,
-  iter = 10,
-  est_z = 1,
-  impt_it = 5,
-  max_lambda = F,
-  est_lam = 1,
-  penl = 1,
-  sigma0 = 100,
-  pi_alpha = 1,
-  beta = NULL,
-  lambda = NULL,
-  sigma = NULL,
-  mu = NULL,
-  p_min = 0.8,
-  min_gene = 300,
-  cutoff = 0.1,
-  verbose = F,
-  num_mc = 3,
-  fix_num = F,
-  mcmc = 50,
-  burnin = 2
-)
+SIMPLE_B(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL,
+  K = 20, iter = 10, est_z = 1, impt_it = 5, max_lambda = F,
+  est_lam = 1, penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL,
+  lambda = NULL, sigma = NULL, mu = NULL, p_min = 0.8,
+  min_gene = 300, cutoff = 0.1, verbose = F, num_mc = 3,
+  fix_num = F, mcmc = 50, burnin = 2)
 }
 \arguments{
 \item{dat}{scRNASeq data matrix. Each row is a gene, each column is a cell.}

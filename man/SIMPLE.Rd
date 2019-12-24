@@ -4,33 +4,11 @@
 \alias{SIMPLE}
 \title{SIMPLE: Imputing zero entries and clustering for scRNASeq data.}
 \usage{
-SIMPLE(
-  dat,
-  K0,
-  M0 = 1,
-  iter = 10,
-  est_lam = 1,
-  impt_it = 5,
-  penl = 1,
-  sigma0 = 100,
-  pi_alpha = 1,
-  beta = NULL,
-  verbose = F,
-  max_lambda = F,
-  lambda = NULL,
-  sigma = NULL,
-  mu = NULL,
-  est_z = 1,
-  clus = NULL,
-  p_min = 0.8,
-  cutoff = 0.1,
-  K = 20,
-  min_gene = 300,
-  num_mc = 3,
-  fix_num = F,
-  mcmc = 50,
-  burnin = 2
-)
+SIMPLE(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5,
+  penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F,
+  max_lambda = F, lambda = NULL, sigma = NULL, mu = NULL,
+  est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.1, K = 20,
+  min_gene = 300, num_mc = 3, fix_num = F, mcmc = 50, burnin = 2)
 }
 \arguments{
 \item{dat}{scRNASeq data matrix. Each row is a gene, each column is a cell.}
@@ -53,7 +31,7 @@ SIMPLE(
 See details.}
 
 \item{beta}{A G by K0 matrix. Initial values for factor loadings (B). If
-null, beta will initialze from normal distribution with mean zero and
+null, beta will be initialized from normal distribution with mean zero and
 variance M0/K0. See details.}
 
 \item{verbose}{Whether to show some intermediate results. Default = False.}
@@ -91,11 +69,11 @@ zeros. Default = 0.8.}
 \item{min_gene}{Minimal number of genes used in the initial phase. See
 details.}
 
-\item{num_mc}{The number of Gibbs steps for generating imputed data when the
-parameters are updated during Monte Carlo EM. Default = 3.}
+\item{num_mc}{The number of Gibbs steps for generating new imputed data after the
+parameters have been updated during Monte Carlo EM. Default = 3.}
 
-\item{fix_num}{If true, always use top \emph{min_gene} genes with higest
-proportion of non zeros in the initial phase. Default = F. See details.}
+\item{fix_num}{If true, always use \emph{min_gene} number of genes with the 
+highest proportion of non zeros in the initial phase. Default = F. See details.}
 
 \item{mcmc}{The number of Gibbs steps to sample imputed data after EM.
 Default = 50.}
@@ -106,34 +84,31 @@ Default = 2.}
 \value{
 \code{SIMPLE} returns a list of results in the following order.
   \enumerate{
-    \item{loglik} {The log-likelihood of the imputed gene expression at each iteration.}
-    \item{pi}{Probabilites of cells belong to each cluster.}
-    \item{mu} {Mean expression for each cluster}
-    \item{sigma} {Variances of idiosyncratic noises for each cluster.}
+    \item{loglik} {The log-likelihood of the full imputed gene expression at each iteration.}
+    \item{pi} {The prior probabilites of cells belong to each cluster.}
+    \item{mu} {Mean expression for each gene in each cluster}
+    \item{sigma} {Variances of idiosyncratic noises for each gene in each cluster.}
     \item{beta} {Factor loadings.}
     \item{lambda} {Variances of factors for each cluster.}
-    \item{z} {The probability of each cell belonging to each cluster.}
-    \item{Ef} {Conditonal expection the factors for each cluster \eqn{E(f_i|z_i= m)}.
-     A list with length M0, each element in the list is a n by K0 matrix.}
-    \item{Varf} {Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}.
-     A list with length M0, each element in the list is a K0 by K0 matrix.}
+    \item{z} {The posterior probability of each cell belonging to each cluster.}
     \item{Yimp0} {A matrix contains the expectation of gene
-      expression.}
+      expression specified by the model.}
     \item{pg} {A G by M0 matrix, dropout rate for each gene in each
-    cluster defined by initial clustering.}
+    cluster estimated from initial clustering.}
     \item{initclus} {Output initial cluster results.}
     \item{impt} {A matrix contains the mean of each imputed
-    entry by sampling multiple imputed values at MLE. If mcmc <= 0, output
-    imputed expressoin matrix at last step of EM}
+    entry by sampling multiple imputed values while the parameters are MLE. If mcmc <= 0, output
+    the imputed expressoin matrix at last step of EM}
     \item{impt_var} {A matrix
     contains the variance of each imputed entry by sampling multiple imputed
-    values at MLE. NULL if mcmc <= 0.}
-    \item{EF} {Posterior means of factors
-    given observed data. If mcmc <= 0, output conditional mean for each cluster
-    at the last step of EM. }
-    \item{varF} {Posterior covariance matrix of
-    factors given observed data. If mcmc <= 0, output conditional variance for
-    each cluster at the last step of EM.}
+    values while the parameters are MLE. NULL if mcmc <= 0.}
+    \item{Ef} {If mcmc >0, output posterior means of factors
+    given observed data (a n by K0 matrix). If mcmc <= 0, output conditional expectation of the factors for each cluster \eqn{E(f_i|z_i= m)} 
+   at the last step of EM. A list with length M0, 
+   each element in the list is a n by K0 matrix.}
+    \item{Varf} {If mcmc >0, output posterior variance matrix of
+    factors given observed data (a n by K0 matrix). If mcmc <= 0, output conditional covariance of factors for each cluster \eqn{Var(f_i|z_i = m)} at the last step of EM. 
+     A list with length M0, each element in the list is a K0 by K0 matrix.}
     \item{consensus_cluster} {Score for the clustering stability of each cell by multiple imputations.
     NULL if mcmc <=0 }
 }
@@ -150,8 +125,8 @@ We assume that the cells come from M0 clusters. Within each cell
 cluster, the 'true' gene expression is modeled by a multivariate Gaussian
 distribution whose covariance matrix can be composed into a low rank matrix
 (a couple of latent gene modules) and idiosyncratic noises. Gene modules are
-shared among cell clusters though the coexpression level of each gene module
-can be different. \cr
+shared among cell clusters, although the coexpression level of each gene module
+in different cell cluster can be different. \cr
 Suppose there are G genes and n cells. For each cell
 cluster, the gene expression follows \eqn{Y|Z=m~MVN(\mu_m, B\Lambda_m B^T +
 \Sigma_m)} where B is a G by K0 matrix, \eqn{\Sigma_m} is a G by G diagonal
@@ -161,14 +136,14 @@ specified by \emph{lambda}. \eqn{P(Z_m) = \pi_m} where \eqn{\pi~Dir(\alpha)}.
 
 The algorithm first runs Monte Carlo EM using only the genes with low dropout
 rate (initial phase) and initializes factor loadings and clustering
-membership. Then it runs another rounds of Monte Carlo EM using all the
+membership. Then it runs more rounds of Monte Carlo EM using all the
 genes. In the initial phase, we use the genes with dropout rate less than
-\emph{1 - p_min}; if the number of genes is less than \emph{min_gene}, we
+\emph{1 - p_min}; if the number of such genes is less than \emph{min_gene}, we
 rank the genes by the number cells with nonzero expression and keep the top
 \emph{min_gene} genes. If \emph{fix_num} is true, then we always keep the top
 \emph{min_gene} genes in the initial phase.
 
-If \emph{num_mc} > 0, this function will sample multiple imputed values and cell factors at MLEs of B, \eqn{\Lambda_m}, etc by Gibbs sampling.
+After Monte Carlo EM, we obtain MLE of B, \eqn{\Lambda_m}, etc. If \emph{num_mc} > 0, this function will sample multiple imputed values and cell factors at the MLEs of all the parameters by Gibbs sampling.
 Based on multiple imputed values, it will evaluate cluster stability for each cell (\emph{consensus_cluster}).
 It will also output the posterior mean and variance for the imputed values and cell factors.
 }
