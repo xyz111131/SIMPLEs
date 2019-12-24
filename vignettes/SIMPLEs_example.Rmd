@@ -213,5 +213,5 @@ chu_more_dropout_impute <- SIMPLE_B(more_dropout_data, celltype=rep(1,n),p_min=0
 mse <- mean((chu_more_dropout_impute$impt[Z==1] - original_data[Z==1])^2)
 
 simpleb_infered_cluster <- apply(chu_more_dropout_impute$z, 1, which.max)
-mclust::adjustedRandIndex(simpleb_infered_cluster, chu$chu_cell_type)
+cluster_score <- mclust::adjustedRandIndex(simpleb_infered_cluster, chu$chu_cell_type)
 ```
