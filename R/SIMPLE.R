@@ -406,7 +406,7 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, initclus = clus, impt = result2$impt, 
-            impt_var = result2$impt_var, Ef = impute_result$Ef, EF = result2$Ef, Varf = result2$Varf,
+            impt_var = result2$impt_var, Ef = impute_result$Ef, EF = result2$EF, Varf = result2$Varf,
             consensus_cluster = result2$consensus_cluster))
     }
     return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
