@@ -27,7 +27,7 @@
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 #'
 do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_sd = NULL, 
-    celltype = NULL, mcmc = 10, burnin = 2, verbose = F, pg = 0.5, cutoff = 0.5) {
+    celltype = NULL, mcmc = 10, burnin = 2, verbose = F, pg = 0.5, cutoff = 0.1) {
     PI = 3.14159265359
     # initiation
     G <- nrow(Y)
@@ -41,7 +41,7 @@ do_impute <- function(dat, Y, beta, lambda, sigma, mu, pi, pos_mean = NULL, pos_
         pos_sd <- rep(1, G)
     
     if (is.null(celltype)) 
-        celltype <- rep(0, n)
+        celltype <- rep(1, n)
     MB <- max(celltype)
     
     if (length(pg) == 1) 

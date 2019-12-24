@@ -11,8 +11,8 @@ co-expression network.
 
 ### How it works
 SIMPLEs iteratively clusters the cells, identifies
-correlated gene modules infers the probability of the dropout event for each
-zero entry, imputes zeros within each cluster utilizing the expression of other
+correlated gene modules, infers the probability of the dropout event for each
+zero entry, and imputes zeros within each cluster utilizing the expression of other
 correlated genes. It will impute the technical zeros (or "dropout") while
 maintain the biological zeros at low expression level.
 
@@ -51,9 +51,9 @@ vignettes(topic="SIMPLEs_example", package="SIMPLEs")
 ```
 
 ## Data
-In our Vignettes, we introduce how to simulate the single cell RNASeq data.
-Furthermore, we provide a real dataset from the recent researches. You can view
-the details of the data, and test it with our SIMPLEs.
+In the vignettes, we introduced how to simulate the single cell RNASeq data.
+Furthermore, we provided a real dataset from a recent study. You can view
+the details of the data, and run the analyses using SIMPLEs.
 ```r
 # describe the details of the real dataset
 ?SIMPLEs::chu

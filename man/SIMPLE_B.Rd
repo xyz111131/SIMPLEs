@@ -4,35 +4,12 @@
 \alias{SIMPLE_B}
 \title{Impute zero entries and clustering for scRNASeq data integrating bulk RNASeq}
 \usage{
-SIMPLE_B(
-  dat,
-  K0,
-  bulk,
-  M0 = 1,
-  celltype = NULL,
-  clus = NULL,
-  K = 20,
-  iter = 10,
-  est_z = 1,
-  impt_it = 5,
-  max_lambda = F,
-  est_lam = 1,
-  penl = 1,
-  sigma0 = 100,
-  pi_alpha = 1,
-  beta = NULL,
-  lambda = NULL,
-  sigma = NULL,
-  mu = NULL,
-  p_min = 0.8,
-  min_gene = 300,
-  cutoff = 0.1,
-  verbose = F,
-  num_mc = 3,
-  fix_num = F,
-  mcmc = 50,
-  burnin = 2
-)
+SIMPLE_B(dat, K0, bulk, celltype, M0 = 1, clus = NULL, K = 20,
+  iter = 10, est_z = 1, impt_it = 3, max_lambda = F, est_lam = 1,
+  penl = 1, sigma0 = 100, pi_alpha = 1, beta = NULL,
+  lambda = NULL, sigma = NULL, mu = NULL, p_min = 0.8,
+  min_gene = 300, cutoff = 0.1, verbose = F, num_mc = 3,
+  fix_num = F, mcmc = 50, burnin = 2)
 }
 \arguments{
 \item{dat}{scRNASeq data matrix. Each row is a gene, each column is a cell.}
@@ -41,9 +18,9 @@ SIMPLE_B(
 
 \item{bulk}{Bulk RNASeq data matrix. Each row is a gene which must be ordered the same as the scRNASeq data. Each column is a cell type which must be ordered as the cell type label in \emph{celltype}.}
 
-\item{M0}{Number of clusters. See details.}
-
 \item{celltype}{A numeric vector for labels of cells in the scRNASeq. Each cell type has corresponding mean expression in the bulk RNASeq data. The labels must start from 1 to the number of types. If NULL, all cells are treated as a single cell type and the input bulk RNASeq should also have one column that is the mean expression over all the cell types.}
+
+\item{M0}{Number of clusters. See details.}
 
 \item{clus}{Initial clustering of scRNASeq data. If NULL, the function will use PCA and Kmeans to do clustering initially.}
 
@@ -99,14 +76,17 @@ SIMPLE_B(
 \item{beta}{Factor loadings.}
 \item{lambda}{Variances of factors for each cluster.}
 \item{z}{The probability of each cell belonging to each cluster.}
-\item{Ef}{Conditonal expection the factors for each cluster \eqn{E(f_i|z_i = m)}. A list with length M0, each element in the list is a n by K0 matrix.}
-\item{Varf}{Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}. A list with length M0, each element in the list is a K0 by K0 matrix.}
 \item{Yimp0}{A matrix contains the expectation of imputed expression.}
 \item{pg}{A G by M0 matrix, dropout rate for each gene in each cluster.}
  \item{impt}{A matrix contains the mean of each imputed entry by sampling multiple imputed values at MLE. If mcmc <= 0, output imputed expressoin matrix at last step of EM}
  \item{impt_var}{A matrix contains the variance of each imputed entry by sampling multiple imputed values at MLE. NULL if mcmc <= 0.}
- \item{EF}{Posterior means of factors given observed data. If mcmc <= 0, output conditional mean for each cluster given the imputed data at the last step of EM. }
- \item{VarF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
+    \item{Ef} {If mcmc >0, output posterior means of factors
+    given observed data (a n by K0 matrix). If mcmc <= 0, output conditional expectation of the factors for each cluster \eqn{E(f_i|z_i= m)} 
+   at the last step of EM. A list with length M0, 
+   each element in the list is a n by K0 matrix.}
+    \item{Varf} {If mcmc >0, output posterior variances of
+    factors given observed data (a n by K0 matrix). If mcmc <= 0, output conditional covariance matrix of factors for each cluster \eqn{Var(f_i|z_i = m)} at the last step of EM. 
+     A list with length M0, each element in the list is a K0 by K0 matrix.}
  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 }
 }

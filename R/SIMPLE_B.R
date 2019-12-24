@@ -146,8 +146,8 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #' @param dat scRNASeq data matrix. Each row is a gene, each column is a cell.
 #' @param K0 Number of latent gene modules. See details.
 #' @param bulk Bulk RNASeq data matrix. Each row is a gene which must be ordered the same as the scRNASeq data. Each column is a cell type which must be ordered as the cell type label in \emph{celltype}.
-#' @param M0 Number of clusters. See details.
 #' @param celltype A numeric vector for labels of cells in the scRNASeq. Each cell type has corresponding mean expression in the bulk RNASeq data. The labels must start from 1 to the number of types. If NULL, all cells are treated as a single cell type and the input bulk RNASeq should also have one column that is the mean expression over all the cell types.
+#' @param M0 Number of clusters. See details.
 #' @param clus Initial clustering of scRNASeq data. If NULL, the function will use PCA and Kmeans to do clustering initially.
 #' @param K The number of PCs used in the initial clustering. Default = 20.
 #' @param iter The number of EM iterations using full data set. See details.
@@ -179,14 +179,22 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #' \item{beta}{Factor loadings.}
 #' \item{lambda}{Variances of factors for each cluster.}
 #' \item{z}{The probability of each cell belonging to each cluster.}
-#' \item{Ef}{Conditonal expection the factors for each cluster \eqn{E(f_i|z_i = m)}. A list with length M0, each element in the list is a n by K0 matrix.}
-#' \item{Varf}{Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}. A list with length M0, each element in the list is a K0 by K0 matrix.}
 #' \item{Yimp0}{A matrix contains the expectation of imputed expression.}
 #' \item{pg}{A G by M0 matrix, dropout rate for each gene in each cluster.}
 #'  \item{impt}{A matrix contains the mean of each imputed entry by sampling multiple imputed values at MLE. If mcmc <= 0, output imputed expressoin matrix at last step of EM}
 #'  \item{impt_var}{A matrix contains the variance of each imputed entry by sampling multiple imputed values at MLE. NULL if mcmc <= 0.}
+<<<<<<< HEAD
 #'  \item{EF}{Posterior means of factors given observed data. If mcmc <= 0, output conditional mean for each cluster given the imputed data at the last step of EM. }
 #'  \item{VarF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
+=======
+#'     \item{Ef} {If mcmc >0, output posterior means of factors
+#'     given observed data (a n by K0 matrix). If mcmc <= 0, output conditional expectation of the factors for each cluster \eqn{E(f_i|z_i= m)} 
+#'    at the last step of EM. A list with length M0, 
+#'    each element in the list is a n by K0 matrix.}
+#'     \item{Varf} {If mcmc >0, output posterior variances of
+#'     factors given observed data (a n by K0 matrix). If mcmc <= 0, output conditional covariance matrix of factors for each cluster \eqn{Var(f_i|z_i = m)} at the last step of EM. 
+#'      A list with length M0, each element in the list is a K0 by K0 matrix.}
+>>>>>>> develop
 #'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 #' }
 #' @import doParallel
@@ -220,8 +228,8 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 #' @export
 
-SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20, 
-    iter = 10, est_z = 1, impt_it = 5, max_lambda = F, est_lam = 1, penl = 1, sigma0 = 100, 
+SIMPLE_B <- function(dat, K0, bulk, celltype, M0 = 1, clus = NULL, K = 20, 
+    iter = 10, est_z = 1, impt_it = 3, max_lambda = F, est_lam = 1, penl = 1, sigma0 = 100, 
     pi_alpha = 1, beta = NULL, lambda = NULL, sigma = NULL, mu = NULL, p_min = 0.8, 
     min_gene = 300, cutoff = 0.1, verbose = F, num_mc = 3, fix_num = F, mcmc = 50, 
     burnin = 2) {
@@ -290,9 +298,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
         if (verbose) {
             print(xtabs(~clus))
             print("initial clustering randInd: ")
-            if (!is.null(celltype)) {
-                print(mclust::adjustedRandIndex(clus, celltype))
-            }
+            
             if (!is.null(celltype)) {
                 print(mclust::adjustedRandIndex(clus, celltype))  #_true
             }
@@ -425,18 +431,17 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
         message("multiple impution sampling")
         result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, 
             impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM, 
-            impute_result$geneSd, clus, mcmc = mcmc, burnin = burnin, pg = pg, cutoff = cutoff)
+            impute_result$geneSd,celltype, mcmc = mcmc, burnin = burnin, pg = pg, cutoff = cutoff)
 
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, impt = result2$impt, impt_var = result2$impt_var, 
-            Ef = impute_result$Ef, EF = result2$EF,
-            Varf = impute_result$Varf, VarF = result2$VarF, consensus_cluster = result2$consensus_cluster))
+            Ef = result2$EF, Varf = result2$varF, consensus_cluster = result2$consensus_cluster))
     } else {
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, impt = impute_result$Y, 
-            impt_var = NULL, Ef = impute_result$Ef, EF = impute_result$Ef,
-            Varf = impute_result$Varf, VarF = impute_result$Varf,consensus_cluster = NULL))
+            impt_var = NULL, Ef = impute_result$Ef, 
+            Varf = impute_result$Varf, consensus_cluster = NULL))
     }
 }
