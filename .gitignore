@@ -5,3 +5,5 @@
 packrat/lib*/
 .DS_Store
 *.Rproj
+doc
+Meta
