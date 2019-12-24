@@ -179,14 +179,17 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #' \item{beta}{Factor loadings.}
 #' \item{lambda}{Variances of factors for each cluster.}
 #' \item{z}{The probability of each cell belonging to each cluster.}
-#' \item{Ef}{Conditonal expection the factors for each cluster \eqn{E(f_i|z_i = m)}. A list with length M0, each element in the list is a n by K0 matrix.}
-#' \item{Varf}{Conditonal covariance of factors for each cluster \eqn{Var(f_i|z_i = m)}. A list with length M0, each element in the list is a K0 by K0 matrix.}
 #' \item{Yimp0}{A matrix contains the expectation of imputed expression.}
 #' \item{pg}{A G by M0 matrix, dropout rate for each gene in each cluster.}
 #'  \item{impt}{A matrix contains the mean of each imputed entry by sampling multiple imputed values at MLE. If mcmc <= 0, output imputed expressoin matrix at last step of EM}
 #'  \item{impt_var}{A matrix contains the variance of each imputed entry by sampling multiple imputed values at MLE. NULL if mcmc <= 0.}
-#'  \item{EF}{Posterior means of factors given observed data. If mcmc <= 0, output conditional mean for each cluster given the imputed data at the last step of EM. }
-#'  \item{VarF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
+#'     \item{Ef} {If mcmc >0, output posterior means of factors
+#'     given observed data (a n by K0 matrix). If mcmc <= 0, output conditional expectation of the factors for each cluster \eqn{E(f_i|z_i= m)} 
+#'    at the last step of EM. A list with length M0, 
+#'    each element in the list is a n by K0 matrix.}
+#'     \item{Varf} {If mcmc >0, output posterior variances of
+#'     factors given observed data (a n by K0 matrix). If mcmc <= 0, output conditional covariance matrix of factors for each cluster \eqn{Var(f_i|z_i = m)} at the last step of EM. 
+#'      A list with length M0, each element in the list is a K0 by K0 matrix.}
 #'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 #' }
 #' @import doParallel
@@ -430,8 +433,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, impt = result2$impt, impt_var = result2$impt_var, 
-            Ef = impute_result$Ef, EF = result2$EF,
-            Varf = impute_result$Varf, VarF = result2$VarF, consensus_cluster = result2$consensus_cluster))
+            Ef = result2$EF, Varf = result2$varF, consensus_cluster = result2$consensus_cluster))
     } else {
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 

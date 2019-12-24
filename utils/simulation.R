@@ -11,7 +11,7 @@ library(matrixStats)
 
 # make sure current work directory
 # TODO: use here
-source("./utils.R")
+source("utils/utils.R")
 
 args = commandArgs(trailingOnly = TRUE)
 
