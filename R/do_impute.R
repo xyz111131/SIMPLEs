@@ -23,7 +23,6 @@
 #'   \item{varF}{Posterior covariance matrix of factors}
 #'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. }
 #' }
-#' @export
 #' @author Zhirui Hu, \email{zhiruihu@g.harvard.edu}
 #' @author Songpeng Zu, \email{songpengzu@g.harvard.edu}
 #'

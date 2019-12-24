@@ -2,7 +2,6 @@
 
 export(SIMPLE)
 export(SIMPLE_B)
-export(do_impute)
 import(MASS)
 import(Rsolnp)
 import(doParallel)

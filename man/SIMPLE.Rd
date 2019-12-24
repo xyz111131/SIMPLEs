@@ -106,11 +106,11 @@ Default = 2.}
     given observed data (a n by K0 matrix). If mcmc <= 0, output conditional expectation of the factors for each cluster \eqn{E(f_i|z_i= m)} 
    at the last step of EM. A list with length M0, 
    each element in the list is a n by K0 matrix.}
-    \item{Varf} {If mcmc >0, output posterior variance matrix of
-    factors given observed data (a n by K0 matrix). If mcmc <= 0, output conditional covariance of factors for each cluster \eqn{Var(f_i|z_i = m)} at the last step of EM. 
+    \item{Varf} {If mcmc >0, output posterior variances of
+    factors given observed data (a n by K0 matrix). If mcmc <= 0, output conditional covariance matrix of factors for each cluster \eqn{Var(f_i|z_i = m)} at the last step of EM. 
      A list with length M0, each element in the list is a K0 by K0 matrix.}
     \item{consensus_cluster} {Score for the clustering stability of each cell by multiple imputations.
-    NULL if mcmc <=0 }
+    NULL if mcmc <=0. }
 }
 }
 \description{
@@ -156,7 +156,8 @@ library(SIMPLEs)
 M0 = 3 
 # number of cells
 n = 300
-# simulation_bulk and getCluster is defined in the util.R under the util dir of the corresponding github repository.
+# simulation_bulk and getCluster is defined in the util.R under the util directory of the corresponding github repository.
+source("utils/utils.R")
 simu_data = simulation_bulk(n=300, S0 = 20, K = 6, MC=M0, block_size = 32, indepG = 1000 - 32*6, verbose=F, overlap=0)
 Y2 = simu_data$Y2 
 # number of factors
