@@ -131,7 +131,7 @@ Default = 2.}
     \item{EF} {Posterior means of factors
     given observed data. If mcmc <= 0, output conditional mean for each cluster
     at the last step of EM. }
-    \item{varF} {Posterior covariance matrix of
+    \item{VarF} {Posterior covariance matrix of
     factors given observed data. If mcmc <= 0, output conditional variance for
     each cluster at the last step of EM.}
     \item{consensus_cluster} {Score for the clustering stability of each cell by multiple imputations.

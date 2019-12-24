@@ -106,7 +106,7 @@ SIMPLE_B(
  \item{impt}{A matrix contains the mean of each imputed entry by sampling multiple imputed values at MLE. If mcmc <= 0, output imputed expressoin matrix at last step of EM}
  \item{impt_var}{A matrix contains the variance of each imputed entry by sampling multiple imputed values at MLE. NULL if mcmc <= 0.}
  \item{EF}{Posterior means of factors given observed data. If mcmc <= 0, output conditional mean for each cluster given the imputed data at the last step of EM. }
- \item{varF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
+ \item{VarF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 }
 }

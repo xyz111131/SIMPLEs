@@ -172,7 +172,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #'     \item{EF} {Posterior means of factors
 #'     given observed data. If mcmc <= 0, output conditional mean for each cluster
 #'     at the last step of EM. }
-#'     \item{varF} {Posterior covariance matrix of
+#'     \item{VarF} {Posterior covariance matrix of
 #'     factors given observed data. If mcmc <= 0, output conditional variance for
 #'     each cluster at the last step of EM.}
 #'     \item{consensus_cluster} {Score for the clustering stability of each cell by multiple imputations.
@@ -406,13 +406,14 @@ SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, initclus = clus, impt = result2$impt, 
-            impt_var = result2$impt_var, Ef = impute_result$Ef, EF = result2$EF, Varf = result2$Varf,
+            impt_var = result2$impt_var, Ef = impute_result$Ef, EF = result2$EF, Varf = impute_result$Varf,
+            VarF = result2$VarF,
             consensus_cluster = result2$consensus_cluster))
     }
     return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
         sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
         z = impute_result$z, Yimp0 = impute, pg = pg, initclus = clus, impt = impute_result$Y, 
         impt_var = NULL, Ef = impute_result$Ef, EF = impute_result$Ef,
-        Varf = impute_result$Varf, consensus_cluster = NULL))
+        Varf = impute_result$Varf, VarF = impute_result$Varf, consensus_cluster = NULL))
 }
 

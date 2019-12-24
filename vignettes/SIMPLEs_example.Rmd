@@ -97,7 +97,7 @@ simulation_bulk <- function(n = 300, S0 = 10, K = 3, MC = 2, block_size = 50, ov
     B = B[ind, ]
     Mu = Mu[ind, ]
     Sigma = Sigma[ind]
-    return(list(Y1 = Y2, Y = Y, B = B, W = W, Mu = Mu, 
+    return(list(Y2 = Y2, Y = Y, B = B, W = W, Mu = Mu, 
                 Lambda = Lambda, Sigma = Sigma, Z = Z, bulk = rowMeans(Mu[, Z]), S_label = label0))
 }
 ```
@@ -111,14 +111,15 @@ genes shared by two consecutive groups given an order of the group. The drop
 rate is 0.3.
 
 ```{r, eval=FALSE}
-simu_data <- simulation_bulk(n=300, S0=20, K=3, MC=3, block_size=100, indepG=1000-190,
-                             overlap=55, dropr=0.3)
+n_cell <- 300
+simu_data <- simulation_bulk(n=n_cell, S0=20, K=3, MC=3, block_size=100, indepG=1000-190,
+                             overlap=55, dropout=0.3)
 ```
 Then run SIMPLEs with or without bulk data. 
 ```{r, eval=FALSE}
 simple_res <- SIMPLE(simu_data$Y2, K0=3, M0=3)
 # if we have the bulk data
-simpleb_res <- SIMPLE_B(simu_data$Y2, K0=3, M0=3, bulk=data.frame(simu_data$bulk))
+simpleb_res <- SIMPLE_B(simu_data$Y2, K0=3, M0=3, celltype=rep(1,n_cell),bulk=data.frame(simu_data$bulk))
 ```
 
 We can evaluate the results with clustering and tsne plot.

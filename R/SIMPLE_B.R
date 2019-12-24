@@ -186,7 +186,7 @@ init_impute_bulk <- function(Y2, clus, bulk, pg1, cutoff = 0.1, verbose = F) {
 #'  \item{impt}{A matrix contains the mean of each imputed entry by sampling multiple imputed values at MLE. If mcmc <= 0, output imputed expressoin matrix at last step of EM}
 #'  \item{impt_var}{A matrix contains the variance of each imputed entry by sampling multiple imputed values at MLE. NULL if mcmc <= 0.}
 #'  \item{EF}{Posterior means of factors given observed data. If mcmc <= 0, output conditional mean for each cluster given the imputed data at the last step of EM. }
-#'  \item{varF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
+#'  \item{VarF}{Posterior covariance matrix of factors given observed data. If mcmc <= 0, output conditional variance for each cluster given the imputed data at the last step of EM.}
 #'  \item{consensus_cluster}{Score for the clustering stability of each cell by multiple imputations. NULL if mcmc <=0 }
 #' }
 #' @import doParallel
@@ -431,12 +431,12 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, impt = result2$impt, impt_var = result2$impt_var, 
             Ef = impute_result$Ef, EF = result2$EF,
-            Varf = result2$Varf, consensus_cluster = result2$consensus_cluster))
+            Varf = impute_result$Varf, VarF = result2$VarF, consensus_cluster = result2$consensus_cluster))
     } else {
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, impt = impute_result$Y, 
             impt_var = NULL, Ef = impute_result$Ef, EF = impute_result$Ef,
-            Varf = impute_result$Varf, consensus_cluster = NULL))
+            Varf = impute_result$Varf, VarF = impute_result$Varf,consensus_cluster = NULL))
     }
 }
