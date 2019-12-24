@@ -293,9 +293,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
         if (verbose) {
             print(xtabs(~clus))
             print("initial clustering randInd: ")
-            if (!is.null(celltype)) {
-                print(mclust::adjustedRandIndex(clus, celltype))
-            }
+            
             if (!is.null(celltype)) {
                 print(mclust::adjustedRandIndex(clus, celltype))  #_true
             }
@@ -428,7 +426,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
         message("multiple impution sampling")
         result2 = do_impute(dat, impute_result$Y, impute_result$beta, impute_result$lambda, 
             impute_result$sigma, impute_result$mu, impute_result$pi, impute_result$geneM, 
-            impute_result$geneSd, clus, mcmc = mcmc, burnin = burnin, pg = pg, cutoff = cutoff)
+            impute_result$geneSd,celltype, mcmc = mcmc, burnin = burnin, pg = pg, cutoff = cutoff)
 
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
@@ -438,7 +436,7 @@ SIMPLE_B <- function(dat, K0, bulk, M0 = 1, celltype = NULL, clus = NULL, K = 20
         return(list(loglik = impute_result$loglik, pi = impute_result$pi, mu = impute_result$mu, 
             sigma = impute_result$sigma, beta = impute_result$beta, lambda = impute_result$lambda, 
             z = impute_result$z, Yimp0 = impute, pg = pg, impt = impute_result$Y, 
-            impt_var = NULL, Ef = impute_result$Ef, EF = impute_result$Ef,
-            Varf = impute_result$Varf, VarF = impute_result$Varf,consensus_cluster = NULL))
+            impt_var = NULL, Ef = impute_result$Ef, 
+            Varf = impute_result$Varf, consensus_cluster = NULL))
     }
 }
