@@ -209,7 +209,7 @@ init_impute <- function(Y2, M0, clus, p_min = 0.6, cutoff = 0.1, verbose = F) {
 #' @export
 
 SIMPLE <- function(dat, K0, M0 = 1, iter = 10, est_lam = 1, impt_it = 5, penl = 1, 
-    sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = F, lambda = NULL, 
+    sigma0 = 100, pi_alpha = 1, beta = NULL, verbose = F, max_lambda = T, lambda = NULL, 
     sigma = NULL, mu = NULL, est_z = 1, clus = NULL, p_min = 0.8, cutoff = 0.1, K = 20, 
     min_gene = 300, num_mc = 3, fix_num = F, mcmc = 50, burnin = 2) {
     # EM algorithm initiation
